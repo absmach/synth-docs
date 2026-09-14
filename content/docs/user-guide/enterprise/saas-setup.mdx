@@ -1,0 +1,49 @@
+---
+title: Cloud Compilation
+description: How Synth EE runs compilation jobs in the cloud — background builds, progress streaming, and worker pools.
+enterprise: true
+---
+
+# Cloud Compilation
+
+Synth Enterprise Edition offloads compilation to a managed pool of worker nodes. Instead of running `synth build` locally, you trigger a build through SynthUI or the API and get the results when the job completes — no local CPU required.
+
+---
+
+## How It Works
+
+When you trigger a build in Synth EE:
+
+1. Your `.synth` design file is uploaded to the Synth EE platform.
+2. A worker node picks up the job from the build queue.
+3. The worker runs placement, routing, and DRC — exactly the same pipeline as the local CLI.
+4. Build logs and progress are streamed back to SynthUI in real time.
+5. When complete, artifacts (KiCad files, Gerbers, evidence bundles) are available for download.
+
+You can close the browser tab and come back — builds run independently in the background.
+
+---
+
+## Benefits Over Local Builds
+
+| | Local CLI | Cloud (EE) |
+| :--- | :---: | :---: |
+| No install required | ❌ | ✅ |
+| Build runs in background | ❌ | ✅ |
+| Team can view progress | ❌ | ✅ |
+| Scales to large boards | Limited by local hardware | ✅ |
+| Audit trail per build | ❌ | ✅ |
+
+---
+
+## Triggering a Cloud Build
+
+See [SynthUI Dashboard → Triggering a Build](/user-guide/enterprise/synth-ui#triggering-a-build-from-synthui) for step-by-step instructions.
+
+You can also trigger builds programmatically via the Synth EE REST API — contact your administrator for API credentials and the API reference URL.
+
+---
+
+## Build Queue & Concurrency
+
+Synth EE automatically manages worker scaling. Multiple builds from your team run concurrently — there is no manual configuration required. Build queue depth and worker pool size are managed by your Synth EE administrator.

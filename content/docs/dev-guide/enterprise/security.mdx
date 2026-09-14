@@ -1,0 +1,59 @@
+---
+title: Enterprise Security & Confidential Computing
+description: Hardware attestation, confidential VM execution, and security architecture for synth-ee operators.
+enterprise: true
+---
+
+# Enterprise Security & Confidential Computing
+
+> [!NOTE]
+> This page is for **Synth EE operators and security reviewers**. It covers the infrastructure-level security model — not end-user authentication (see [Teams & Access Control](/user-guide/enterprise/tenant-management) for that).
+
+Synth EE supports running IP-sensitive hardware synthesis workloads inside hardware-attested **Confidential Virtual Machines (Confidential VMs)** to protect proprietary design files and component IP from the cloud operator.
+
+---
+
+## Threat Model
+
+The confidential compute configuration is designed for customers who:
+
+- Cannot allow the cloud provider or Synth EE operator to access raw design files or netlists.
+- Must demonstrate that synthesis was performed by an unmodified, verified version of the Synth compiler binary.
+- Need cryptographic proof linking each build artifact to a specific compiler binary measurement.
+
+---
+
+## Attestation Pipeline
+
+Each `synth-agent-worker` process on a Confidential VM goes through the following steps before it can receive or decrypt any work:
+
+1. **Binary measurement**: The worker binary hash is measured and signed by the hardware root of trust (AMD SEV-SNP or Intel TDX) at launch time.
+2. **Attestation quote**: The worker generates a hardware attestation quote containing the binary measurement and sends it to the SaaS control plane.
+3. **Verification**: The control plane verifies the quote against the expected binary measurement (published with each Synth EE release).
+4. **Key release**: Only after successful attestation does the control plane release the encryption keys needed to decrypt the customer's design files. Design data is never decrypted outside the CVM boundary.
+
+---
+
+## Supported Platforms
+
+| Platform | Technology |
+| :--- | :--- |
+| AMD EPYC (3rd gen+) | SEV-SNP |
+| Intel Xeon (4th gen+) | TDX |
+| Azure Confidential VMs | Both (via Azure Attestation) |
+| GCP Confidential VMs | AMD SEV-SNP |
+
+---
+
+## Key Security Properties
+
+- Design files are encrypted in transit and at rest.
+- Decryption keys are only released to attested worker processes.
+- The attestation quote provides a verifiable chain from the hardware to the specific compiler binary version.
+- Worker processes run in isolated containers within the CVM and have no outbound network access to arbitrary endpoints.
+
+---
+
+## Auditing
+
+Attestation quotes and key-release events are logged to the same evidence bundle system used for qualification (see [Qualification & Compliance](/user-guide/enterprise/qualification)). This allows a third-party auditor to verify that every build was executed on attested hardware.

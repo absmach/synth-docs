@@ -1,0 +1,14 @@
+---
+title: synth-ir Crate
+description: Intermediate Representation and lowering transformations in Synth.
+---
+
+# `synth-ir` Crate
+
+The `synth-ir` crate provides the canonical Intermediate Representation (IR) format. IR lowers AST statements into explicit geometry specs, pad coordinates, net connection graphs, and DRC rule constraints.
+
+## Structures
+
+- `DesignIR`: Top-level serializable container.
+- `ComponentIR`: Resolved footprint, orientation, layer, and pin locations.
+- `NetIR`: Flattened list of pin pairs requiring copper track connectivity.

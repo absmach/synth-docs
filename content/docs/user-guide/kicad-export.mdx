@@ -1,0 +1,118 @@
+---
+title: KiCad Export
+description: What synth export-kicad produces, how to work with the output, and the full fabrication workflow.
+---
+
+# KiCad Export
+
+`synth export-kicad` generates a native KiCad 8 project directory from a `.synth` design file. The exported files open directly in KiCad without any conversion step.
+
+---
+
+## Required KiCad Version
+
+Synth targets **KiCad v8.0 and later**. Files use the KiCad 8 S-expression format. Older KiCad versions may fail to open the generated files.
+
+Download KiCad from [kicad.org/download](https://www.kicad.org/download/).
+
+---
+
+## What Gets Exported
+
+```bash
+synth export-kicad board.synth --out output/board
+```
+
+| File | Opens in | Contains |
+| :--- | :--- | :--- |
+| `board.kicad_pro` | KiCad | Project file — open this to load the full project |
+| `board.kicad_sch` | KiCad Schematic Editor | Net connections, component symbols, power flags |
+| `board.kicad_sym` | (loaded by `.kicad_sch`) | Symbol definitions referenced by the schematic |
+| `board.kicad_pcb` | KiCad PCB Editor | Component footprints, copper tracks, board outline |
+| `bom.csv` | Spreadsheet | Bill of materials with reference designators, values, MPN, and LCSC part numbers |
+
+### Optional Fabrication Outputs
+
+Additional flags shell out to `kicad-cli` to produce manufacturing artifacts in the same step:
+
+```bash
+synth export-kicad board.synth --out output/board --gerbers --drill --step
+```
+
+| Flag | Output | Location |
+| :--- | :--- | :--- |
+| `--gerbers` | RS-274X Gerber files | `output/board/gerbers/` |
+| `--drill` | Excellon drill files + PDF map | `output/board/drill/` |
+| `--step` | 3D STEP model | `output/board/board.step` |
+| `--pnp` | Pick-and-place CSV | `output/board/pnp.csv` |
+
+These require `kicad-cli` to be installed and on your `PATH`. Get it with [KiCad](https://www.kicad.org/download/).
+
+---
+
+## Opening the Project
+
+Open the project file to load everything at once:
+
+```bash
+kicad output/board/board.kicad_pro
+```
+
+Or open individual files:
+
+```bash
+# Schematic only
+kicad output/board/board.kicad_sch
+
+# PCB layout only
+kicad output/board/board.kicad_pcb
+```
+
+---
+
+## The Ownership Rule
+
+> [!IMPORTANT]
+> **Never hand-edit the generated KiCad files.** They are byte-deterministic re-exports — any manual edit is silently destroyed on the next `synth export-kicad` run.
+>
+> Make changes in the `.synth` source file, then re-export. This is intentional: the `.synth` file is the single source of truth for connectivity, values, and part numbers.
+
+If you want to adjust visual positions of schematic symbols, use the `synth preview` browser to drag them — offsets are saved to a `<design>.synth.layout.toml` sidecar file that is preserved across exports.
+
+---
+
+## Validation Gates
+
+Synth's validation runs before export. Add `--validate-erc` to also run KiCad's own ERC check on the exported schematic:
+
+```bash
+synth export-kicad board.synth --out output/board --validate-erc
+```
+
+The recommended gate order before shipping any design:
+
+1. `synth validate board.synth` — zero blocking diagnostics
+2. `synth export-kicad board.synth --out output/board`
+3. `kicad-cli sch erc board.kicad_sch` — zero errors, zero warnings
+4. `kicad-cli pcb drc board.kicad_pcb --schematic-parity` — clean
+
+---
+
+## BOM and Part Numbers
+
+The `bom.csv` file is generated from the component registry. Each component carries:
+
+- **MPN** — manufacturer part number from the registry
+- **LCSC** — LCSC/JLCPCB part number (if the part was imported from LCSC)
+
+KiCad's BOM tools and the JLCPCB plugin ecosystem read the `MPN` and `LCSC` fields directly from the schematic's hidden instance fields — Synth stamps these onto every component at export time.
+
+Do not edit `bom.csv` directly. If a part number is wrong, fix it in the registry and re-export.
+
+---
+
+## Known Limitations
+
+- **Hierarchical schematics**: The exported schematic is single-sheet. Hierarchical sheet structures are not yet supported.
+- **3D models**: Component 3D model associations are written using the standard KiCad footprint field. You must have the KiCad 3D model packages installed for them to render.
+- **Gerber/drill/STEP**: These require `kicad-cli` to be installed. `synth export-kicad` itself only writes the KiCad project files; the fabrication outputs are produced by shelling out to `kicad-cli pcb export`.

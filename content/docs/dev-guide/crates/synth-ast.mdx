@@ -1,0 +1,15 @@
+---
+title: synth-ast Crate
+description: Abstract Syntax Tree definitions and node schemas for Synth.
+---
+
+# `synth-ast` Crate
+
+The `synth-ast` crate defines the strongly typed Abstract Syntax Tree (AST) data structures used throughout the parsing and analysis phases.
+
+## Core Types
+
+- `BoardNode`: Represents board dimensions, layer stackups, and global design parameters.
+- `ComponentNode`: Component instantiation nodes with values, footprints, and attributes.
+- `NetNode`: Logical electrical net connections linking component pins.
+- `Expression`: Numeric expressions with unit suffixes (`mm`, `mil`, `um`, `ohm`).

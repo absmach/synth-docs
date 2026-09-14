@@ -1,0 +1,289 @@
+---
+title: CLI Reference
+description: Complete reference for all synth subcommands — validate, export-kicad, fix, preview, drc, registry, part, mcp, and more.
+---
+
+# CLI Reference
+
+The `synth` CLI is the primary interface for compiling designs, running checks, and integrating with AI assistants.
+
+> **Running from a checkout?** Use `cargo run -p synth-cli --` in place of `synth`. Example: `cargo run -p synth-cli -- validate board.synth`.
+
+---
+
+## Exit Codes
+
+All subcommands use consistent exit codes:
+
+| Code | Meaning |
+| :--- | :--- |
+| `0` | Success |
+| `1` | Validation errors (parse, semantic, ERC, DRC…) |
+| `2` | Usage error (bad arguments, file not found) |
+| `3` | Internal compiler error (a bug — please report) |
+
+---
+
+## `synth validate`
+
+Parse, resolve, and validate a SynthSpec file. Runs electrical-rule checks (ERC), structural checks, and emits structured diagnostics. This is the first command to run whenever you edit a `.synth` file.
+
+```bash
+synth validate <INPUT_FILE> [OPTIONS]
+```
+
+**Options:**
+
+| Flag | Description |
+| :--- | :--- |
+| `--format human\|json` | Output format. `json` emits machine-readable diagnostics for tooling. Default: `human`. |
+| `--registry <DIR>` | Path to the Tier-1 component registry. Auto-discovered from `$SYNTH_REGISTRY`, `./registry/parts`, or the embedded seed. |
+| `--user-registry <DIR>` | Path to your Tier-2 (personal) registry overlay. |
+| `--strict-registry` | Treat user-part shadowing of shipped parts as an error. |
+| `--parse-only` | Stop after parsing; skip resolution and lowering. |
+
+**Examples:**
+
+```bash
+# Validate a design, human-readable output
+synth validate board.synth
+
+# Machine-readable output for CI or tooling
+synth validate board.synth --format json
+
+# Validate against your personal registry overlay
+synth validate board.synth --user-registry ~/.synth/registry
+```
+
+---
+
+## `synth export-kicad`
+
+Export a SynthSpec file to a KiCad 8 project directory. Writes a `.kicad_pro`, `.kicad_sch`, `.kicad_sym`, `.kicad_pcb`, and `bom.csv`. Optional flags shell out to `kicad-cli` to produce Gerber, drill, and STEP outputs.
+
+```bash
+synth export-kicad <INPUT_FILE> --out <DIR> [OPTIONS]
+```
+
+**Options:**
+
+| Flag | Description |
+| :--- | :--- |
+| `--out <DIR>` | Output directory for the KiCad project. Created if absent. **(Required)** |
+| `--gerbers` | Also emit RS-274X Gerbers into `<out>/gerbers/` via `kicad-cli`. |
+| `--drill` | Also emit Excellon drill files into `<out>/drill/` via `kicad-cli`. |
+| `--step` | Also emit a 3D STEP model via `kicad-cli`. |
+| `--pnp` | Also emit a Pick-and-Place CSV (`pnp.csv`). |
+| `--profile <NAME>` | Target manufacturer profile (`jlc`, `pcbway`, `oshpark`). |
+| `--validate-erc` | Run KiCad schematic ERC (`kicad-cli sch erc`) on the exported schematic. |
+| `--force` | Export even if Synth validation produces errors. |
+| `--allow-unverified-parts` | Allow fab outputs (Gerbers etc.) even when the design uses unreviewed parts. |
+
+**Examples:**
+
+```bash
+# Basic export
+synth export-kicad board.synth --out output/board
+
+# Export + Gerbers + drill files in one step
+synth export-kicad board.synth --out output/board --gerbers --drill
+
+# Full fab package with KiCad ERC gate
+synth export-kicad board.synth --out output/board \
+  --gerbers --drill --step --validate-erc --profile jlc
+```
+
+**Output files:**
+
+| File | Description |
+| :--- | :--- |
+| `<name>.kicad_pro` | KiCad project |
+| `<name>.kicad_sch` | Schematic |
+| `<name>.kicad_sym` | Schematic symbols |
+| `<name>.kicad_pcb` | PCB layout |
+| `bom.csv` | Bill of materials with MPN and LCSC part numbers |
+
+> [!IMPORTANT]
+> Generated KiCad files are byte-deterministic. Do not hand-edit them — any manual change is overwritten on the next export. Make changes in the `.synth` source file.
+
+---
+
+## `synth fix`
+
+Apply auto-fixes from `validate` diagnostics back to the source file. Each diagnostic that has a `suggested_fix` is patched in reverse byte order so earlier fixes don't shift later offsets.
+
+```bash
+synth fix <INPUT_FILE> [OPTIONS]
+```
+
+**Options:**
+
+| Flag | Description |
+| :--- | :--- |
+| `--dry-run` | Print the patched source to stdout without writing it to disk. |
+| `--smt` | Enable SMT constraint solving for quantitative fixes (e.g. computing an exact resistor value). |
+
+**Example:**
+
+```bash
+# Preview fixes without applying
+synth fix board.synth --dry-run
+
+# Apply fixes in-place
+synth fix board.synth
+```
+
+---
+
+## `synth preview`
+
+Start a local HTTP server that watches the `.synth` file and shows a live schematic and diagnostics in your browser. The source file is never modified by this command.
+
+```bash
+synth preview <INPUT_FILE> [OPTIONS]
+```
+
+**Options:**
+
+| Flag | Default | Description |
+| :--- | :--- | :--- |
+| `--port <N>` | `8080` | Port to bind on `127.0.0.1`. |
+| `--registry <DIR>` | auto | Component registry directory. |
+
+Open the URL printed by the command. Save changes to the `.synth` file in your editor to refresh the view.
+
+---
+
+## `synth drc`
+
+Run PCB Design Rule Checking on a SynthSpec file (runs full compile + place + route + DRC). Dumps the DRC report as JSON.
+
+```bash
+synth drc <INPUT_FILE> [OPTIONS]
+```
+
+**Options:**
+
+| Flag | Description |
+| :--- | :--- |
+| `--profile <FILE>` | Path to a manufacturer DRC profile file. Defaults to JLCPCB hobbyist tier. |
+| `--pretty` | Pretty-print the JSON output. |
+
+---
+
+## `synth supply-chain`
+
+Query real-time distributor stock and pricing for every component in the design's BOM.
+
+```bash
+synth supply-chain <INPUT_FILE> [--format human|json]
+```
+
+---
+
+## `synth render`
+
+Compile, place, route, and render a 3D PNG (and optional 2D SVG) of the PCB via `kicad-cli`.
+
+```bash
+synth render <INPUT_FILE> --out board.png [OPTIONS]
+```
+
+| Flag | Default | Description |
+| :--- | :--- | :--- |
+| `--out <FILE>` | `board.png` | Output PNG path. |
+| `--quality basic\|high` | `basic` | Render quality. |
+| `--side top\|bottom` | `top` | Board side to render. |
+| `--width <N>` | `2400` | Image width in pixels. |
+| `--height <N>` | `1600` | Image height in pixels. |
+| `--svg` | off | Also export a 2D top-copper SVG. |
+
+---
+
+## `synth registry`
+
+Inspect and manage the component registry.
+
+```bash
+synth registry <SUBCOMMAND>
+```
+
+| Subcommand | Description |
+| :--- | :--- |
+| `path` | Print the resolved Tier-1 (shipped) and Tier-2 (user) registry directories. |
+| `list` | List every part ID in the merged registry, annotated with its tier. |
+| `doctor` | Health check: report shadowed parts and unverified parts. |
+| `install` | Materialize the embedded seed registry to disk for inspection. |
+| `manifest` | Generate or verify a SHA-256 manifest of the Tier-1 registry. |
+
+**Examples:**
+
+```bash
+synth registry list
+synth registry doctor
+synth registry path
+```
+
+---
+
+## `synth part`
+
+Import and author components into your personal Tier-2 registry.
+
+```bash
+synth part <SUBCOMMAND>
+```
+
+| Subcommand | Description |
+| :--- | :--- |
+| `import-lcsc <CODE>` | Import a part from LCSC/EasyEDA by its C-number (e.g. `C2040`). Also works for JLCPCB part numbers. |
+| `import-kicad <LIB_ID>` | Import a part from an installed KiCad symbol library (e.g. `Device:R`, `Regulator_Linear:AMS1117-3.3`). |
+| `import-zip <FILE>` | Import from a SnapEDA or UltraLibrarian "Export to KiCad" zip downloaded through your browser. |
+| `stub <ID>` | Write a blank part skeleton for manual authoring. |
+
+**Examples:**
+
+```bash
+# Import AMS1117 3.3V from LCSC
+synth part import-lcsc C6186
+
+# Import from KiCad's built-in symbol library
+synth part import-kicad Regulator_Linear:AMS1117-3.3
+
+# Create a blank stub to fill in manually
+synth part stub my-custom-ic --pins 16
+```
+
+---
+
+## `synth mcp`
+
+Start the Model Context Protocol (MCP) server for AI assistant integration.
+
+```bash
+synth mcp --stdio
+synth mcp --sse --port 3000
+```
+
+| Flag | Description |
+| :--- | :--- |
+| `--stdio` | Run over stdin/stdout. Recommended for AI agent harnesses. |
+| `--sse` | Run over HTTP + SSE. Endpoints: `/rpc`, `/message`, `/sse`. |
+| `--port <N>` | Port for SSE mode (default: `8081`). |
+
+See the [MCP Server guide](/user-guide/mcp-server) for configuration instructions.
+
+---
+
+## Debugging Subcommands
+
+These dump internal compiler stages as JSON — useful for contributors and tooling authors:
+
+| Command | Description |
+| :--- | :--- |
+| `synth dump-ast <FILE>` | Dump the parsed AST. |
+| `synth dump-ir <FILE>` | Dump the lowered IR. |
+| `synth layout <FILE>` | Dump the schematic auto-layout. |
+| `synth place <FILE>` | Dump the PCB placement. |
+| `synth route <FILE>` | Dump the routing result. |
+| `synth schema diagnostic` | Print the JSON Schema for the diagnostic protocol. |

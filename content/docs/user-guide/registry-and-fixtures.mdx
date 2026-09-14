@@ -1,0 +1,133 @@
+---
+title: Component Registry
+description: Searching the registry, finding part IDs and pin names, and importing your own parts.
+---
+
+# Component Registry
+
+Synth's component registry is a library of part definitions. Each part is a `.synth.toml` file that describes the component's kind, pins, KiCad symbol and footprint, and manufacturer part numbers. Parts are referenced in your `.synth` files by their **part ID**.
+
+---
+
+## Finding Parts
+
+### Search locally
+
+```bash
+synth registry list
+```
+
+Lists every part ID in the registry with its tier (shipped or user-added):
+
+```
+tier1 (shipped): ams1117_3v3
+tier1 (shipped): bme680_env
+tier1 (shipped): c_generic_0402
+tier1 (shipped): c_generic_0603
+tier1 (shipped): r_generic_0603
+tier1 (shipped): stm32f103c8
+tier1 (shipped): usb_c_receptacle
+...
+```
+
+Use `synth registry doctor` to check for any registry issues, and `synth registry path` to see where your registry directories are.
+
+### Search live (LCSC stock + pricing)
+
+```bash
+# Using the MCP server (from an AI assistant)
+synth_search_registry_web query="AMS1117 3.3V LDO"
+```
+
+This searches LCSC/EasyEDA live and returns stock quantity, price, and the C-number you can use to import the part. Falls back to the local registry when offline.
+
+---
+
+## Using Parts in Your Design
+
+Reference a part ID in a `component` declaration:
+
+```rust
+component U1: regulator "ams1117_3v3"
+component C1: capacitor "c_generic_0603"
+component J1: connector "usb_c_receptacle"
+```
+
+The part ID string must exactly match an entry from `synth registry list`. Pin names for `connect` statements come from the part definition — see [Inspecting a Part](#inspecting-a-part) below.
+
+---
+
+## Inspecting a Part
+
+To see a part's pin names before writing `connect` statements, inspect it:
+
+```bash
+synth registry list   # find the part ID first
+```
+
+Or use the MCP server from an AI assistant:
+
+```
+synth_search_registry query="ams1117"
+```
+
+This returns the part's pins, so you know to write `U1.vin`, `U1.vout`, `U1.gnd` rather than guessing.
+
+---
+
+## Importing Parts
+
+Synth can import parts from several sources into your personal Tier-2 registry. Imported parts are tagged as unverified (`W-SYNTH-PART-UNVERIFIED`) until a human reviews the pin table.
+
+### From LCSC / JLCPCB
+
+Import by the C-number shown on the LCSC or JLCPCB parts page:
+
+```bash
+synth part import-lcsc C6186
+```
+
+JLCPCB and LCSC share the same part numbering — `C6186` (the LCSC code) is the same part as the JLCPCB entry showing `C6186` as the "JLCPCB Part #".
+
+### From KiCad Symbol Libraries
+
+Import from KiCad's bundled stock symbols (must have KiCad installed):
+
+```bash
+synth part import-kicad Regulator_Linear:AMS1117-3.3
+synth part import-kicad MCU_Microchip_SAMD:ATSAMD21E18A
+```
+
+### From SnapEDA / UltraLibrarian
+
+Download a "Export to KiCad" zip through your browser, then import the file:
+
+```bash
+synth part import-zip ~/Downloads/my-ic.zip
+```
+
+> [!NOTE]
+> Synth never contacts SnapEDA or UltraLibrarian directly. Their terms of service prohibit automated access. You download the zip manually through their website; Synth only reads the local file.
+
+### Author from Scratch
+
+Create a blank stub and fill it in from the datasheet:
+
+```bash
+synth part stub my-custom-ic --pins 8
+```
+
+This writes a `.synth.toml` skeleton into your Tier-2 registry with numbered pins. Edit the file to add real pin names and electrical types.
+
+---
+
+## Registry Tiers
+
+Synth uses a two-tier registry:
+
+| Tier | Location | Contents |
+| :--- | :--- | :--- |
+| **Tier-1 (shipped)** | `registry/parts/` in the repo, or installed via `synth registry install` | Curated, reviewed parts shipped with Synth |
+| **Tier-2 (user)** | `$SYNTH_USER_REGISTRY_DIR` or `~/.local/share/synth/registry/` | Your imported and custom parts |
+
+Tier-2 parts shadow Tier-1 parts with the same ID. Run `synth registry doctor` to see any shadowing warnings.

@@ -1,0 +1,54 @@
+---
+title: Enterprise Edition Overview
+description: What Synth Enterprise Edition provides — web dashboard, cloud compilation, teams, and compliance.
+enterprise: true
+---
+
+# Synth Enterprise Edition
+
+**Synth Enterprise Edition (Synth EE)** extends the open-source Synth compiler with collaboration, cloud scale, and compliance capabilities for engineering teams.
+
+> [!IMPORTANT]
+> Synth EE is closed source and available through a commercial license. This section describes EE features. The core Synth compiler — including the full CLI, DSL, and MCP server — is open source and free to use.
+
+---
+
+## What Synth EE Adds
+
+### Web-Based AI Cockpit (SynthUI)
+
+An interactive, browser-based Explainability & Review Cockpit where hardware engineers co-design boards with conversational AI copilots (Codex, Claude, Gemini, Mistral). Features interactive patch proposal acceptance, real-time DREAMPlace placement and Pathfinder autorouting canvas, live `.synth` source inspection, and DRC review. See [SynthUI AI Cockpit](/user-guide/enterprise/synth-ui).
+
+### Cloud Compilation
+
+Designs are compiled by a fleet of worker nodes managed by Synth EE. Large or complex boards that would take minutes on a laptop are processed in the background while you continue working. Results appear in the SynthUI dashboard when ready.
+
+### Team Collaboration & Access Control
+
+Invite your team, assign roles, and control who can edit designs, trigger builds, or export production artifacts. Synth EE integrates with your existing identity provider via SSO/SAML 2.0. See [Tenant Management](/user-guide/enterprise/tenant-management).
+
+### Qualification & Compliance Audit Trails
+
+For regulated industries (aerospace, automotive, medical), Synth EE can generate cryptographically signed evidence bundles — compiler logs, DRC reports, and netlist checksums — tied to each build, suitable for IPC Class 3, DO-254, and ISO 26262 workflows. See [Qualification](/user-guide/enterprise/qualification).
+
+---
+
+## Synth EE vs Community Edition
+
+| Capability | Community | Enterprise |
+| :--- | :---: | :---: |
+| Synth DSL compiler | ✅ | ✅ |
+| Placement & auto-routing | ✅ | ✅ |
+| KiCad & Gerber export | ✅ | ✅ |
+| MCP server for AI assistants | ✅ | ✅ |
+| SynthUI web dashboard | ❌ | ✅ |
+| Cloud background compilation | ❌ | ✅ |
+| Team management & SSO | ❌ | ✅ |
+| Qualification & audit trails | ❌ | ✅ |
+| Differential pair constraints | ❌ | ✅ |
+
+---
+
+## Getting Access
+
+Contact [sales@synth.dev](mailto:sales@synth.dev) or visit [synth.dev/enterprise](https://synth.dev/enterprise) to request a trial or discuss licensing.

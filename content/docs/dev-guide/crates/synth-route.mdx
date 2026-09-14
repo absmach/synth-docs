@@ -1,0 +1,14 @@
+---
+title: synth-route Crate
+description: Multi-layer gridless auto-routing engine in synth-route.
+---
+
+# `synth-route` Crate
+
+The `synth-route` crate executes multi-layer auto-routing to convert netlist pin connections into physical copper tracks and vias.
+
+## Routing Engine Features
+
+- **Gridless A* Pathfinding**: Dynamic obstacle avoidance against placed components and clearance keepouts.
+- **Connectivity Solver (`synth-connectivity`)**: Net topology graph analysis and minimum spanning tree (MST) net scheduling.
+- **Via Stack Generator**: Automated via insertion when transitioning between copper layers.

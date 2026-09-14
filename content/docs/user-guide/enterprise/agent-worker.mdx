@@ -1,0 +1,40 @@
+---
+title: Background Builds
+description: How Synth EE queues and executes large compilation jobs asynchronously.
+enterprise: true
+---
+
+# Background Builds
+
+In Synth Enterprise Edition, demanding compilation jobs — such as large multi-layer boards, high pin-count ICs, or designs with many simultaneous nets — are processed asynchronously in the background, separate from your browser session.
+
+---
+
+## What This Means for You
+
+- **No blocking**: Trigger a build and continue other work. You don't need to keep the browser tab open.
+- **Live progress**: SynthUI streams placement and routing progress as it happens. Open the build page at any time to see current status.
+- **Larger designs**: Jobs that would saturate a laptop for several minutes are distributed across multiple workers, completing faster.
+
+---
+
+## Build States
+
+| State | Meaning |
+| :--- | :--- |
+| **Queued** | Waiting for a worker to become available |
+| **Running** | Actively executing — placement, routing, or DRC in progress |
+| **Succeeded** | Build completed; artifacts available for download |
+| **Failed** | An error occurred; view the build log for details |
+
+---
+
+## Notifications
+
+Synth EE can send build completion notifications via email or webhook. Configure these in **Settings → Notifications** in SynthUI.
+
+---
+
+## Build Logs
+
+Every background build retains a full structured log. You can download it from **Build Details → View Log** for debugging unexpected DRC results or verifying that the expected routing passes ran.

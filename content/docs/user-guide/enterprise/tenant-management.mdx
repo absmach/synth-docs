@@ -1,0 +1,55 @@
+---
+title: Teams & Access Control
+description: Roles, permissions, and SSO configuration in Synth Enterprise Edition.
+enterprise: true
+---
+
+# Teams & Access Control
+
+Synth EE supports multi-tenant organizations, enterprise Single Sign-On (SSO), and role-based access control (RBAC) so you can manage who can view, edit, build, and export designs.
+
+---
+
+## Roles
+
+Every user in your organization is assigned one role:
+
+| Role | What they can do |
+| :--- | :--- |
+| **Organization Admin** | Invite and remove users, assign roles, manage billing, configure SSO and security policies, create/delete projects |
+| **Hardware Engineer** | Create projects, upload and edit `.synth` design files, trigger builds, download KiCad and Gerber artifacts |
+| **Viewer** | Browse designs, view build history, read DRC reports — no write access |
+| **Auditor** | Read-only access to qualification logs, DRC reports, build attestation evidence, and compliance exports |
+
+Admins can change a user's role at any time from **Settings → Team**.
+
+---
+
+## Inviting Users
+
+1. Go to **Settings → Team → Invite Member**.
+2. Enter the user's email address and select their role.
+3. They'll receive an email invitation to join your organization.
+
+If SSO is configured, users sign in with their company credentials — no separate password required.
+
+---
+
+## Single Sign-On (SSO)
+
+Synth EE integrates with any identity provider that supports **SAML 2.0** or **OIDC**. Common setups:
+
+- Okta
+- Microsoft Entra ID (Azure AD)
+- Google Workspace
+- Auth0
+
+Contact your Synth EE administrator or reach out to [support@synth.dev](mailto:support@synth.dev) for the SSO setup guide specific to your provider.
+
+Once SSO is enabled, password-based login is disabled for your organization.
+
+---
+
+## Project Permissions
+
+Access control applies at the organization level. All members of an organization can see all projects within it — project-level isolation is not currently supported. Use separate organizations to isolate sensitive IP between teams.

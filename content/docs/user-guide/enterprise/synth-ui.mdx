@@ -1,0 +1,60 @@
+---
+title: SynthUI AI Cockpit
+description: Using the AI Copilot and interactive 3-panel CAD Cockpit in Synth Enterprise Edition.
+enterprise: true
+---
+
+# SynthUI AI Cockpit
+
+SynthUI is the browser-based **Explainability & Review Cockpit** included with Synth Enterprise Edition. It provides an AI-driven, interactive CAD environment where hardware engineers and AI copilots co-design circuit boards in real time.
+
+---
+
+## 3-Panel CAD Workspace
+
+SynthUI organizes hardware co-design into a unified 3-panel workspace:
+
+```
+┌─────────────────────────────┬───────────────────────────────┬──────────────────────────────┐
+│  AI Copilot & Agent Panel   │    Interactive CAD Canvas     │  Source Inspector & DRC      │
+│  - Conversational Prompts   │  - Schematic / Graph / PCB    │  - Live .synth Code Editor   │
+│  - Multi-Model Selection    │  - Congestion Heatmap / 3D    │  - DRC Violation Inspector   │
+│  - AI Patch Proposals       │  - Live Component Steering    │  - BOM & Netlist Exporter    │
+└─────────────────────────────┴───────────────────────────────┴──────────────────────────────┘
+```
+
+### 1. Left Panel: Conversational AI Copilot & Agent Workflows
+- **Multi-Model Support**: Switch seamlessly between AI models (**Codex**, **Claude**, **Gemini**, **Mistral**) or local CLI models.
+- **Intent-Based Generation**: Describe what board or subcircuit you want (e.g. *"Create a dual 3.3V / 5V power supply board with USB-C input"*), and the Copilot streams its reasoning.
+- **Interactive Patch Cards**: Proposed design modifications appear as patch cards showing code diffs and placement changes. Click **Accept Patch** to validate with the compiler and merge into your design.
+- **Autonomous Agent Workflows**: Track agent plan timelines, code diffs, evidence logs, and approve repair proposals.
+
+### 2. Center Panel: 2D Vector CAD Canvas
+- **Multi-Mode Visualization**: Switch between **Schematic**, **System Graph**, **2D PCB Copper Layout**, **Congestion Heatmap**, and **3D Board** views.
+- **Interactive Steering**: Shift component positions (`dx`/`dy`), rotate footprints (`0°`, `90°`, `180°`, `270°`), and see airwires and pads recalculate instantly.
+- **Layer & Net Filtering**: Toggle top/bottom copper layers, view ratsnest connections, and highlight individual nets or differential pairs.
+
+### 3. Right Panel: Inspector & Diagnostics
+- **Live `.synth` Source Inspector**: View and edit the underlying SynthSpec source code with syntax highlighting and auto-validation.
+- **DRC Review**: Inspect physical design rule violations (e.g., trace clearance, pad overlaps). Click any DRC error to zoom directly to its location on the canvas.
+- **BOM Exporter**: View part numbers, MPNs, and LCSC IDs, and export bills of materials.
+
+---
+
+## Designing & Synthesizing in SynthUI
+
+Co-designing a board in SynthUI follows an interactive, human-in-the-loop workflow:
+
+1. **Start a Design**: Click **New Design** to create a fresh workspace or open an existing design cockpit.
+2. **Co-Design with AI**: Enter a prompt or high-level requirements in the AI Copilot panel.
+3. **Review & Accept Patches**: Copilot returns structured patch proposals. Review the proposed `.synth` changes and click **Accept Patch** — Synth runs compiler validation automatically and updates the live inspector.
+4. **Trigger Physical Synthesis**: Click **Trigger Synthesis** to initiate placement (via DREAMPlace) and Pathfinder autorouting. Placement and copper trace convergence stream live onto the 2D CAD canvas.
+5. **Inspect & Tweak**: Manually adjust component placements or rotations on the canvas, inspect DRC markers, or prompt the Copilot to fix routing bottlenecks.
+6. **Export Manufacturing Artifacts**: Open the export menu to download native KiCad project files (`.kicad_pcb`, `.kicad_sch`), Gerbers, drill files, and BOM CSVs.
+
+---
+
+## Downloading Artifacts
+
+From any active design cockpit, click **Export** to download the full production package — KiCad schematics and layouts, Gerbers, drill files, and the bill of materials as a `.zip` archive.
+

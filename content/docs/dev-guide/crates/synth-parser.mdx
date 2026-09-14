@@ -1,0 +1,17 @@
+---
+title: synth-parser Crate
+description: Lexer and parser pipeline for Synth hardware specifications.
+---
+
+# `synth-parser` Crate
+
+The `synth-parser` crate implements lexing and parsing of `.synth` source files into `synth-ast` data structures using zero-copy tokenization.
+
+## Key APIs
+
+```rust
+use synth_parser::parse_source;
+
+let source = std::fs::read_to_string("board.synth")?;
+let ast = parse_source(&source)?;
+```

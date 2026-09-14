@@ -1,0 +1,52 @@
+---
+title: Qualification & Compliance
+description: Audit trails, evidence bundles, and compliance support for regulated hardware design in Synth EE.
+enterprise: true
+---
+
+# Qualification & Compliance
+
+Synth Enterprise Edition includes an automated qualification framework for engineering teams working under regulatory requirements — industrial, aerospace, automotive, and medical hardware applications.
+
+---
+
+## Why It Matters
+
+Hardware designs in regulated domains must demonstrate that the tools used in the design process are qualified — meaning the tool behaves predictably, its outputs are verifiable, and any deviations are traceable. Synth EE's qualification features are designed to support:
+
+- **IPC-2221 / IPC Class 3** — high-reliability PCB fabrication standards
+- **DO-254** — airborne electronic hardware assurance (avionics)
+- **ISO 26262** — functional safety for automotive electronics
+- **IEC 62443** — industrial control system security (for hardware supply chain)
+
+---
+
+## What Synth EE Generates
+
+Every build in Synth EE produces an evidence bundle alongside the standard design artifacts:
+
+| Artifact | Contents |
+| :--- | :--- |
+| **Build manifest** | Synth version, DSL file hash, timestamp, and build parameters |
+| **DRC evidence** | Full DRC report with rule definitions and pass/fail results |
+| **Netlist hash** | SHA-256 digest of the output netlist, verifiable against the source |
+| **Compiler log** | Structured log of every placement decision and routing pass |
+| **Attestation signature** | Cryptographic signature over the full bundle (available in confidential compute configurations) |
+
+---
+
+## Downloading Evidence
+
+From a completed build in SynthUI:
+
+1. Open the **Build Details** page.
+2. Click **Download Evidence Bundle**.
+3. You receive a `.zip` containing all artifacts and a `manifest.json` describing their contents and hashes.
+
+---
+
+## Auditor Access
+
+The **Auditor** role provides read-only access to all qualification logs, DRC reports, and evidence bundles across your organization — without being able to trigger builds or modify designs. This is the appropriate role for quality engineers, certifying authorities, or external reviewers.
+
+See [Teams & Access Control](/user-guide/enterprise/tenant-management) for how to assign the Auditor role.

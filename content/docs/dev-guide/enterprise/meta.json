@@ -1,0 +1,5 @@
+{
+  "title": "Enterprise Architecture",
+  "enterprise": true,
+  "pages": ["architecture", "security"]
+}

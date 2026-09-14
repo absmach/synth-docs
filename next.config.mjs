@@ -1,0 +1,23 @@
+import { createMDX } from "fumadocs-mdx/next";
+
+const withMDX = createMDX();
+
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/docs/synth";
+
+/** @type {import('next').NextConfig} */
+const config = {
+  output: "export",
+  trailingSlash: true,
+  reactStrictMode: true,
+  serverExternalPackages: ["@takumi-rs/image-response"],
+  images: {
+    unoptimized: true,
+  },
+  basePath: BASE_PATH,
+  assetPrefix: BASE_PATH,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: BASE_PATH,
+  },
+};
+
+export default withMDX(config);

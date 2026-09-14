@@ -1,0 +1,269 @@
+---
+title: SynthSpec Reference
+description: Complete language reference for .synth design files — board, components, connections, placement hints, differential pairs, and keepout zones.
+---
+
+# SynthSpec Reference
+
+SynthSpec is the design language used in `.synth` files. This page documents the full syntax.
+
+> [!TIP]
+> An AI assistant using the MCP server can call `synth_language_reference` to retrieve this grammar and three complete example designs at runtime.
+
+---
+
+## File Structure
+
+A `.synth` file contains a single `board` block. Everything lives inside it: components, connections, placement hints, differential pairs, and keepout zones.
+
+```rust
+board "my-board" {
+  layers 2
+  manufacturer "jlcpcb"
+
+  component R1: resistor "r_generic_0603"
+  component C1: capacitor "c_generic_0603"
+
+  connect R1.p1 -> C1.p1
+}
+```
+
+---
+
+## The `board` Block
+
+```rust
+board "<name>" {
+  layers <count>
+  manufacturer "<profile>"
+  // components, connections, etc.
+}
+```
+
+| Field | Required | Description |
+| :--- | :---: | :--- |
+| `<name>` | ✅ | Board name (string). Used as the filename stem in exports. |
+| `layers` | ✅ | Number of copper layers. Common values: `2`, `4`. |
+| `manufacturer` | ❌ | Target fab profile for DRC rules (e.g. `"jlcpcb"`, `"pcbway"`, `"oshpark"`). |
+
+---
+
+## Components
+
+Declare each component with a reference designator, a kind, and a part ID from the registry:
+
+```rust
+component <RefDes>: <kind> "<part_id>"
+```
+
+**Examples:**
+
+```rust
+component J1: connector  "usb_c_receptacle"
+component U1: regulator  "ams1117_3v3"
+component U2: mcu        "stm32f103c8"
+component C1: capacitor  "c_generic_0603"
+component R1: resistor   "r_generic_0603"
+component SW1: switch    "spst_tactile"
+```
+
+### Reference Designators
+
+The `<RefDes>` follows standard EDA conventions:
+
+| Prefix | Component type |
+| :--- | :--- |
+| `C` | Capacitor |
+| `D` | Diode / LED |
+| `J` | Connector |
+| `L` | Inductor |
+| `Q` | Transistor |
+| `R` | Resistor |
+| `SW` | Switch |
+| `U` | Integrated circuit |
+
+### Component Kinds
+
+The kind identifies the component's electrical role in the registry. Common kinds:
+
+`capacitor` · `connector` · `crystal` · `diode` · `inductor` · `led` · `mcu` · `regulator` · `resistor` · `sensor` · `switch`
+
+### Part IDs
+
+The part ID (the string after the kind) is the registry key — it maps to a `.synth.toml` file in the component registry. Use `synth registry list` or `synth registry search` to find available IDs.
+
+---
+
+## Connections
+
+Connect component pins with `->` arrows:
+
+```rust
+connect <RefDes>.<pin> -> <RefDes>.<pin>
+```
+
+Each `connect` statement joins exactly two pin endpoints onto the same electrical net. Multi-pin nets are expressed with multiple `connect` statements:
+
+```rust
+// Connect USB-C VBUS through decoupling cap to regulator input
+connect J1.vbus -> C1.p1
+connect C1.p1   -> U1.vin
+connect J1.gnd  -> C1.p2
+connect C1.p2   -> U1.gnd
+```
+
+Pin names (`vbus`, `gnd`, `vin`, `p1`, `p2`, …) come from the part definition in the registry. Use `synth registry search "<part_id>"` to inspect a part's pin names.
+
+---
+
+## Placement Hints
+
+Add `placement_hint` blocks inside a component declaration to guide the auto-placer:
+
+```rust
+component C4: capacitor "c_generic_0603" {
+  placement_hint { near: "U2" priority: hard }
+}
+```
+
+```rust
+component U1: mcu "rp2350" {
+  placement_hint { region: top_left priority: hard }
+}
+```
+
+| Attribute | Values | Description |
+| :--- | :--- | :--- |
+| `near` | `"<RefDes>"` | Place this component close to the referenced component. |
+| `region` | `top_left` · `top_right` · `bottom_left` · `bottom_right` · `center` | Preferred board region. |
+| `priority` | `soft` · `hard` | `soft` is a preference; `hard` pins the component and prevents the solver from moving it. |
+
+---
+
+## Differential Pairs
+
+Declare a differential pair with impedance constraints after the components and connections:
+
+```rust
+diff_pair <REFDES>_<pin> <REFDES>_<pin> {
+  impedance <value>
+}
+```
+
+The pair is identified by the component and pin at each endpoint — there is no separate net-naming syntax. Example (USB D+/D−):
+
+```rust
+connect J1.dp -> U1.usb_dp
+connect J1.dn -> U1.usb_dn
+
+diff_pair U1_usb_dp U1_usb_dn {
+  impedance 90ohm
+}
+```
+
+---
+
+## Keepout Zones
+
+Define a keepout area by name and radius:
+
+```rust
+keepout <name> {
+  radius <length>
+}
+```
+
+Example — keep copper away from the USB connector area:
+
+```rust
+keepout usb_connector_zone {
+  radius 8mm
+}
+```
+
+---
+
+## Units
+
+Length values accept an explicit unit suffix: `mm`, `mil`, `um`, `in`.  
+Resistance and impedance use `ohm` with standard SI prefixes: `50ohm`, `90ohm`, `100ohm`.
+
+---
+
+## Comments
+
+```rust
+// Single-line comment
+
+/* Multi-line
+   comment */
+```
+
+---
+
+## Complete Example
+
+From `examples/env_logger.synth` — a 2-layer USB-C environmental logger with an STM32 MCU:
+
+```rust
+board "env_logger" {
+  layers 2
+  manufacturer "jlcpcb"
+
+  // Power chain: USB-C 5V → AMS1117 3.3V
+  component J1:    connector  "usb_c_receptacle"
+  component R_CC1: resistor   "r_generic_0603"   // 5.1k CC1 pull-down
+  component R_CC2: resistor   "r_generic_0603"   // 5.1k CC2 pull-down
+  component U1:    regulator  "ams1117_3v3"
+  component C1:    capacitor  "c_generic_0805"   // VBUS bulk cap
+  component C2:    capacitor  "c_generic_0805"   // LDO input cap
+  component C3:    capacitor  "c_generic_0805"   // LDO output cap
+
+  connect J1.vbus -> C1.p1
+  connect J1.gnd  -> C1.p2
+  connect J1.cc1  -> R_CC1.p1
+  connect J1.gnd  -> R_CC1.p2
+  connect J1.cc2  -> R_CC2.p1
+  connect J1.gnd  -> R_CC2.p2
+  connect J1.vbus -> U1.vin
+  connect J1.gnd  -> U1.gnd
+  connect U1.vin  -> C2.p1
+  connect U1.gnd  -> C2.p2
+  connect U1.vout -> C3.p1
+  connect U1.gnd  -> C3.p2
+
+  // MCU + decoupling
+  component U2: mcu "stm32f103c8"
+  component C4: capacitor "c_generic_0603" {
+    placement_hint { near: "U2" priority: hard }
+  }
+
+  connect U1.vout -> U2.vdd
+  connect U1.gnd  -> U2.vss
+  connect U2.vdd  -> C4.p1
+  connect U2.vss  -> C4.p2
+
+  // BME680 I2C sensor
+  component U3: sensor "bme680_env"
+  component R2:  resistor "r_generic_0603"   // SDA pull-up 4.7k
+  component R3:  resistor "r_generic_0603"   // SCL pull-up 4.7k
+
+  connect U1.vout -> U3.vdd
+  connect U1.gnd  -> U3.gnd
+  connect U2.pb7  -> U3.sda
+  connect U2.pb6  -> U3.scl
+  connect U2.pb7  -> R2.p1
+  connect R2.p2   -> U1.vout
+  connect U2.pb6  -> R3.p1
+  connect R3.p2   -> U1.vout
+}
+```
+
+See the full file at `examples/env_logger.synth` in the repository. Additional examples:
+
+| File | Demonstrates |
+| :--- | :--- |
+| `fixtures/designs/hello.synth` | The smallest valid board |
+| `examples/env_logger.synth` | MCU, LDO, I²C sensor, debug header |
+| `examples/sensor_logger.synth` | USB-C, dual I²C sensors, SPI flash, LEDs |
+| `examples/placement_and_diff_pair.synth` | Hard placement hints, differential pairs, keepout zones |

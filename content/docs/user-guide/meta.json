@@ -1,0 +1,12 @@
+{
+  "title": "User Guide",
+  "pages": [
+    "quick-start",
+    "dsl-reference",
+    "cli",
+    "kicad-export",
+    "mcp-server",
+    "registry-and-fixtures",
+    "enterprise"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Enterprise Edition",
+  "enterprise": true,
+  "pages": [
+    "overview",
+    "synth-ui",
+    "agent-worker",
+    "saas-setup",
+    "tenant-management",
+    "qualification"
+  ]
+}

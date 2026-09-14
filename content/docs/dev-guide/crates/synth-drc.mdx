@@ -1,0 +1,12 @@
+---
+title: synth-drc Crate
+description: Design Rule Checking engine and diagnostic reporter.
+---
+
+# `synth-drc` Crate
+
+The `synth-drc` crate validates physical board layouts against manufacturer design rules (minimum trace width, pad-to-pad clearance, drill-to-track distance, annular ring sizes).
+
+## Diagnostic Pipeline (`synth-diagnostics`)
+
+DRC violations are categorized by severity (`Error`, `Warning`, `Info`) and emitted with exact spatial coordinates and net identifiers for easy debugging.

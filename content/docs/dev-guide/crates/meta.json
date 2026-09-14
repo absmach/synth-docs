@@ -1,0 +1,12 @@
+{
+  "title": "Compiler & EDA Crates",
+  "pages": [
+    "synth-ast",
+    "synth-parser",
+    "synth-ir",
+    "synth-place",
+    "synth-route",
+    "synth-drc",
+    "synth-smt"
+  ]
+}

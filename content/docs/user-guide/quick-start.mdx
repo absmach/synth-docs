@@ -1,0 +1,147 @@
+---
+title: Quick Start Guide
+description: Build your first circuit board with Synth — clone, build, validate, and export to KiCad.
+---
+
+# Quick Start Guide
+
+This guide walks you through cloning Synth, building the CLI, validating an example design, and exporting a KiCad project.
+
+## Prerequisites
+
+- **Rust toolchain** (1.85 or later) — install via [rustup.rs](https://rustup.rs)
+- **KiCad v8+** (optional) — for viewing the exported board and schematic
+- **`kicad-cli`** (optional) — for Gerber, drill, and STEP exports from the command line
+
+## Get Synth
+
+Clone the repository and build the CLI:
+
+```bash
+git clone https://github.com/absmach/synth.git
+cd synth
+cargo build -p synth-cli
+```
+
+Verify the build:
+
+```bash
+cargo run -p synth-cli -- --help
+```
+
+> [!TIP]
+> All examples below use `cargo run -p synth-cli --` as the `synth` prefix. Once you have a stable binary on your `PATH` you can replace that with just `synth`.
+
+---
+
+## 1. Validate the Minimal Example
+
+The smallest valid board just declares a board name and layer count:
+
+```bash
+cargo run -p synth-cli -- validate fixtures/designs/hello.synth
+```
+
+A clean design exits with code `0` and prints no errors. This is also your first check that the build worked correctly.
+
+---
+
+## 2. Explore a Real Design
+
+The `examples/` directory contains complete, realistic boards. The environmental logger is a good starting point — it has USB-C power input, an LDO regulator, an STM32 MCU, an I²C sensor, and a debug header:
+
+```bash
+cargo run -p synth-cli -- validate examples/env_logger.synth
+```
+
+Open `examples/env_logger.synth` in your editor to see how a SynthSpec file is structured:
+
+```rust
+board "env_logger" {
+  layers 2
+  manufacturer "jlcpcb"
+
+  component J1: connector  "usb_c_receptacle"
+  component U1: regulator  "ams1117_3v3"
+  component U2: mcu        "stm32f103c8"
+  // ...
+
+  connect J1.vbus -> U1.vin
+  connect J1.gnd  -> U1.gnd
+  connect U1.vout -> U2.vdd
+  // ...
+}
+```
+
+**What this means:**
+
+- `board "env_logger" { ... }` — declares the board name, layer count, and target manufacturer.
+- `component J1: connector "usb_c_receptacle"` — places a USB-C connector. `J1` is the reference designator; `connector` is the component kind; `"usb_c_receptacle"` is the part ID in the registry.
+- `connect J1.vbus -> U1.vin` — connects the `vbus` pin of `J1` to the `vin` pin of `U1`.
+
+> [!TIP]
+> The [SynthSpec Reference](/user-guide/dsl-reference) covers all language constructs in detail, including placement hints, differential pairs, and keepout zones.
+
+---
+
+## 3. Live Preview
+
+Start the browser-based schematic viewer to see the design as you edit it:
+
+```bash
+cargo run -p synth-cli -- preview examples/env_logger.synth
+```
+
+Open the URL printed in the terminal. Save changes to the `.synth` file in your editor — the schematic and diagnostics refresh automatically.
+
+---
+
+## 4. Export to KiCad
+
+Export a full KiCad project (schematic, PCB, BOM):
+
+```bash
+cargo run -p synth-cli -- export-kicad examples/env_logger.synth --out output/env_logger
+```
+
+The `output/env_logger/` directory contains:
+
+| File | What it is |
+| :--- | :--- |
+| `env_logger.kicad_pro` | KiCad project file |
+| `env_logger.kicad_sch` | Schematic — open in KiCad Schematic Editor |
+| `env_logger.kicad_pcb` | PCB layout — open in KiCad PCB Editor |
+| `env_logger.kicad_sym` | Schematic symbols |
+| `bom.csv` | Bill of materials with MPN and LCSC part numbers |
+
+Open the project in KiCad:
+
+```bash
+kicad output/env_logger/env_logger.kicad_pro
+```
+
+> [!IMPORTANT]
+> Do not hand-edit the generated KiCad files. They are regenerated from the `.synth` source on every export — any manual edits will be overwritten. Make changes in the `.synth` file instead.
+
+---
+
+## 5. Auto-Fix Diagnostics
+
+If `validate` reports errors, Synth can often apply fixes automatically:
+
+```bash
+# See what fixes are available (dry run)
+cargo run -p synth-cli -- fix examples/env_logger.synth --dry-run
+
+# Apply fixes in place
+cargo run -p synth-cli -- fix examples/env_logger.synth
+```
+
+---
+
+## Next Steps
+
+- [SynthSpec Reference](/user-guide/dsl-reference) — Full language syntax, component kinds, placement hints, and differential pairs.
+- [CLI Reference](/user-guide/cli) — All subcommands with flags and examples.
+- [Component Registry](/user-guide/registry-and-fixtures) — How to search, import, and author parts.
+- [MCP Server](/user-guide/mcp-server) — Use an AI assistant to validate and edit designs interactively.

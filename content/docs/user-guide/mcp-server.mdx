@@ -1,0 +1,120 @@
+---
+title: MCP Server
+description: Use Synth with AI assistants via the Model Context Protocol — configuration and available tools.
+---
+
+# MCP Server
+
+Synth ships a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that exposes every compiler stage as a tool for AI agents. Agents can validate designs, apply auto-fixes, search the component registry, import parts, and export to KiCad — all without leaving their tool surface.
+
+---
+
+## Supported Transports
+
+The MCP server supports two transports:
+
+| Transport | Command | Use case |
+| :--- | :--- | :--- |
+| **stdio** | `synth mcp --stdio` | AI agent harnesses (Claude Desktop, Antigravity IDE, Cursor) — recommended |
+| **HTTP + SSE** | `synth mcp --sse --port 3000` | Custom agents and scripts via HTTP |
+
+---
+
+## Available MCP Tools
+
+### Design & validation
+
+| Tool | What it does |
+| :--- | :--- |
+| `synth_language_reference` | Returns the full SynthSpec grammar plus three complete example designs. Call this first when drafting a `.synth` file from scratch. |
+| `synth_validate` | Validate a SynthSpec file; returns structured diagnostics. |
+| `synth_fix` | Apply suggested fixes from diagnostics back to the source. |
+| `synth_export` | Export a validated design to a KiCad project. |
+| `synth_place` | Run PCB placement and return the placement IR. |
+| `synth_route` | Run placement + routing and return the routing IR. |
+
+### Component registry
+
+| Tool | What it does |
+| :--- | :--- |
+| `synth_search_registry` | Keyword search the local Tier-1 + Tier-2 registries. |
+| `synth_search_registry_web` | Keyword search LCSC/EasyEDA for live stock and pricing. Falls back to the local registry when offline. |
+| `synth_import_part` | Import a part from LCSC (`source: "lcsc"`), a KiCad symbol (`source: "kicad"`), or a SnapEDA/UltraLibrarian zip (`source: "kicad-zip"`). |
+| `synth_author_part` | Validate and persist a hand-authored TOML part definition. |
+
+---
+
+## Configuration
+
+Add the following to your AI assistant's MCP settings:
+
+### Claude Desktop
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "synth": {
+      "command": "synth",
+      "args": ["mcp", "--stdio"]
+    }
+  }
+}
+```
+
+### Cursor / other editors
+
+Add a `mcp` section to your editor's settings (see your editor's MCP documentation for the exact location). The command is `synth mcp --stdio`.
+
+> [!TIP]
+> Running from a checkout? Replace `"synth"` with the path to the built binary:
+> ```json
+> "command": "/path/to/synth/target/debug/synth"
+> ```
+
+---
+
+## The Agent Design Loop
+
+A typical agent workflow for designing a new board:
+
+```
+1. synth_language_reference   → get the SynthSpec grammar + examples
+2. synth_search_registry      → find part IDs and pin names
+3. [draft board.synth]
+4. synth_validate             → check for errors
+5. synth_fix                  → auto-apply suggested fixes
+6. synth_search_registry_web  → verify parts are in stock
+7. synth_export               → generate the KiCad project
+```
+
+---
+
+## Troubleshooting
+
+**The assistant says it can't find `synth`**
+
+Make sure the `synth` binary is on your system `PATH`:
+
+```bash
+which synth        # macOS / Linux
+where synth        # Windows
+```
+
+If not found, see the [Quick Start Guide](/user-guide/quick-start) for build instructions.
+
+**Debug the MCP server**
+
+Run the server manually to see its output:
+
+```bash
+synth mcp --stdio
+```
+
+Or use SSE mode with logging:
+
+```bash
+synth mcp --sse --port 3000
+```
