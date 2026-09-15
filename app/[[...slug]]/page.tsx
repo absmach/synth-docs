@@ -12,7 +12,6 @@ import { toSiteUrl } from "@/lib/base-path";
 import { baseUrl } from "@/lib/metadata";
 import { getPageImage, source } from "@/lib/source";
 import { getMDXComponents } from "@/mdx-components";
-import { RootRedirect } from "./root-redirect";
 
 type ParamProps = {
   params: Promise<{ slug?: string[] }>;

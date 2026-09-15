@@ -11,10 +11,7 @@ function resolveTitle(title: Metadata["title"]): string {
   return "Synth — Open-Source EDA & Hardware Synthesis Platform";
 }
 
-export function createMetadata(
-  override: Metadata,
-  ogSlug = "synth",
-): Metadata {
+export function createMetadata(override: Metadata, ogSlug = "synth"): Metadata {
   const ogUrl = `${baseUrl.toString()}/og/${ogSlug}/image.webp`;
   const resolvedTitle = resolveTitle(override.title);
   const canonicalUrl =
