@@ -2,6 +2,7 @@ import { remarkAdmonition, remarkMdxMermaid } from "fumadocs-core/mdx-plugins";
 import { metaSchema, pageSchema } from "fumadocs-core/source/schema";
 import { defineConfig, defineDocs } from "fumadocs-mdx/config";
 import { z } from "zod";
+import { remarkDocImages } from "./lib/remark-doc-images";
 
 export const docs = defineDocs({
   dir: "content/docs",
@@ -43,7 +44,6 @@ export default defineConfig({
         "mermaid",
       ],
     },
-    remarkPlugins: [remarkAdmonition, remarkMdxMermaid],
+    remarkPlugins: [remarkAdmonition, remarkMdxMermaid, remarkDocImages],
   },
 });
-

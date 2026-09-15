@@ -15,17 +15,36 @@ const DefaultPre = defaultMdxComponents.pre as
 
 const DOC_IMAGE_PATTERN = /^\/docs\/synth\/(img|diagrams|screenshots)\//;
 
+type MdxNodeWithProps = {
+  props?: {
+    children?: ReactNode;
+    className?: string;
+    "data-language"?: string;
+    lang?: string;
+  };
+};
+
+type PreProps = ComponentPropsWithoutRef<"pre"> & {
+  "data-language"?: string;
+};
+
+function getNodeProps(node: ReactNode): MdxNodeWithProps["props"] | undefined {
+  if (node && typeof node === "object" && "props" in node) {
+    return (node as MdxNodeWithProps).props;
+  }
+  return undefined;
+}
+
 function extractText(node: ReactNode): string {
   if (typeof node === "string") return node;
   if (typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(extractText).join("");
-  if (node && typeof node === "object" && "props" in node) {
-    return extractText((node as any).props?.children);
-  }
+  const props = getNodeProps(node);
+  if (props) return extractText(props.children);
   return "";
 }
 
-function findMermaid(node: any): { isMermaid: boolean; text: string } {
+function findMermaid(node: ReactNode): { isMermaid: boolean; text: string } {
   if (!node) return { isMermaid: false, text: "" };
 
   if (Array.isArray(node)) {
@@ -36,9 +55,10 @@ function findMermaid(node: any): { isMermaid: boolean; text: string } {
     return { isMermaid: false, text: "" };
   }
 
-  if (typeof node === "object" && node && "props" in node) {
-    const className = String(node.props?.className || "");
-    const lang = String(node.props?.["data-language"] || node.props?.lang || "");
+  const props = getNodeProps(node);
+  if (props) {
+    const className = String(props.className || "");
+    const lang = String(props["data-language"] || props.lang || "");
 
     if (
       className.includes("language-mermaid") ||
@@ -47,12 +67,12 @@ function findMermaid(node: any): { isMermaid: boolean; text: string } {
     ) {
       return {
         isMermaid: true,
-        text: extractText(node.props?.children || node),
+        text: extractText(props.children || node),
       };
     }
 
-    if (node.props?.children) {
-      return findMermaid(node.props.children);
+    if (props.children) {
+      return findMermaid(props.children);
     }
   }
 
@@ -63,7 +83,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
     ...defaultMdxComponents,
     pre: (props) => {
-      const preLang = String((props as any)?.["data-language"] || "");
+      const preLang = String((props as PreProps)?.["data-language"] || "");
       const preClass = String(props?.className || "");
 
       if (preLang === "mermaid" || preClass.includes("language-mermaid")) {

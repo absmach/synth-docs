@@ -1,12 +1,30 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "synth-docs",
+  "main": "workers/image-proxy.ts",
   "compatibility_date": "2026-05-26",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "observability": {
     "enabled": true
   },
   "assets": {
-    "directory": "./out"
-  }
+    "directory": "./out",
+    // Only these paths are routed to the Worker (workers/image-proxy.ts);
+    // everything else (docs pages, JS/CSS, existing public/ files) is
+    // matched against the static export in ./out first, unchanged.
+    "run_worker_first": [
+      "/docs/synth/img/*",
+      "/docs/synth/diagrams/*",
+      "/docs/synth/screenshots/*"
+    ]
+  },
+  "r2_buckets": [
+    {
+      "binding": "IMAGES_BUCKET",
+      "bucket_name": "websites-images",
+      // Local dev hits the real bucket instead of an empty simulator, so
+      // images published via publish-image.mjs are visible immediately.
+      "remote": true
+    }
+  ]
 }
