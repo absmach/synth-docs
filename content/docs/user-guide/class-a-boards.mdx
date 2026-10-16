@@ -111,21 +111,46 @@ Outputs: `<board>.kicad_pro`, `<board>.kicad_sch`, `<board>.kicad_sym`,
 
 ## Screenshots
 
-The four boards and their routed copper render as schematic and PCB images.
-Maintainers can publish them into the shared image bucket and reference them
-here:
+Two families of images ship with this page: **platform** shots of the Synth
+cockpit, and **board** renders (schematic + routed copper).
+
+### Platform
+
+| Shot | What it shows |
+|---|---|
+| `platform-login.png` | Sign-in |
+| `platform-projects.png` | Workspace home — projects list, New design |
+| `platform-board-workspace.png` | A Class-A board workspace: title, revision, Build design, assistant panel, status bar |
+| `platform-build.png` | “Board ready to review” after a successful physical build |
+
+### Boards
+
+| Board | Schematic | Routed PCB |
+|---|---|---|
+| `sensor_logger` | `sensor_logger-schematic.svg` | `sensor_logger-pcb.svg` |
+| `env_logger` | `env_logger-schematic.svg` | `env_logger-pcb.svg` |
+| `climate_node` | `climate_node-schematic.svg` | `climate_node-pcb.svg` |
+| `water_leak_sensor` | `water_leak_sensor-schematic.svg` | `water_leak_sensor-pcb.svg` |
+
+### Rendering and publishing
+
+Doc images are served from the shared image bucket, not committed to git.
 
 ```bash
-# render (KiCad 10)
+# board renders (KiCad 10)
 kicad-cli sch export svg --output out/<board> out/<board>/<board>.kicad_sch
-kicad-cli pcb export svg --layers F.Cu,B.Cu,Edge.Cuts --output out/<board>/<board>-pcb.svg out/<board>/<board>.kicad_pcb
+kicad-cli pcb export svg --layers F.Cu,B.Cu,Edge.Cuts \
+  --output out/<board>/<board>-pcb.svg <routed>.kicad_pcb
 
-# publish (requires CLOUDFLARE_API_TOKEN with R2 Edit)
-pnpm run publish-image out/<board>/<board>-pcb.svg screenshots/<board>-pcb.svg
+# publish (requires CLOUDFLARE_API_TOKEN with R2 Edit on websites-images)
+pnpm run publish-image out/<board>/<board>.svg        screenshots/<board>-schematic.svg
+pnpm run publish-image out/<board>/<board>-pcb.svg    screenshots/<board>-pcb.svg
+pnpm run publish-image platform-login.png             screenshots/platform-login.png
 ```
 
-Then reference them in this page with plain markdown:
+Then reference them with plain markdown:
 
 ```markdown
 ![sensor_logger routed PCB](/screenshots/sensor_logger-pcb.svg)
+![Synth cockpit board workspace](/screenshots/platform-board-workspace.png)
 ```
