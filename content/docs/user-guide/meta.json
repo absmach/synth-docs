@@ -2,6 +2,7 @@
   "title": "User Guide",
   "pages": [
     "quick-start",
+    "prompt-to-pcb",
     "dsl-reference",
     "cli",
     "kicad-export",
