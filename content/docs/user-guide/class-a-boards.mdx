@@ -1,0 +1,131 @@
+---
+title: Class-A Reference Boards
+description: Four production-clean low-speed embedded boards you can build, route and fabricate end to end with the Synth compiler.
+new: true
+---
+
+# Class-A Reference Boards
+
+The Class-A reference set is four low-speed embedded boards that exercise the
+whole toolchain — parse → ERC → placement → routing → DRC — and come out the
+other side **fully routed and good to fabricate**. They are small, cheap, and
+use only coarse-pitch parts so every via meets a standard JLC floor.
+
+| Board | MCU | Sensor | Regulator | Power in | Layers |
+|---|---|---|---|---|---|
+| `sensor_logger` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4 |
+| `env_logger` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4 |
+| `climate_node` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4 |
+| `water_leak_sensor` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4 |
+
+Every board fits the Level-A envelope: one MCU, one I²C sensor, one LDO, one
+power connector, ≤ 4 copper layers, no high-speed or dense-digital features.
+
+> [!NOTE]
+> The coarse `atmega328p` (DIP-28, 2.54 mm) and `jst_ph_4pin` (2.0 mm) are a
+> deliberate choice. Fine-pitch parts such as an LQFP-48 (0.5 mm) or micro-USB
+> (0.6 mm) can only escape through via-in-pad micro-vias below the standard
+> drill floor, which no standard fab profile accepts. Moving the MCU and
+> connector to coarse pitch removes that need.
+
+## Pipeline
+
+```mermaid
+flowchart LR
+    SRC[".synth source"] --> P[parse + resolve]
+    P --> ERC[validate / ERC]
+    ERC --> PLACE[placement]
+    PLACE --> ROUTE["route (kicad-routing-tools)"]
+    ROUTE --> DRC["DRC + connectivity"]
+    DRC --> FAB["KiCad project + Gerbers + BOM"]
+```
+
+## Validate
+
+```bash
+synth validate <board>.synth
+```
+
+Exits `0` with no error-level diagnostics (each board reports four
+non-blocking warnings: thermal, supply, anomaly, plane reference).
+
+## Route to a standard floor
+
+Routing is performed by an external engine. Synth never generates copper; it
+hands the exported `.kicad_pro` / `.kicad_pcb` to the router and then checks the
+result independently.
+
+```bash
+synth route <board>.synth \
+  --router kicad-routing-tools \
+  --kicad-routing-tools-repo "$KICAD_ROUTING_TOOLS_REPO" \
+  --krt-fab-overrides fab_jlc_standard.txt \
+  --krt-escalation board
+```
+
+`fab_jlc_standard.txt` pins the via/track/clearance floors to the JLC standard
+tier instead of the router's own defaults:
+
+```toml
+via_diameter = 0.60
+via_drill = 0.30
+clearance = 0.127
+track_width = 0.127
+hole_to_hole = 0.20
+pad_hole_to_hole = 0.45
+board_edge = 0.20
+```
+
+A good-to-produce board reports:
+
+- `state: routed`
+- `statistics.open_nets: 0`
+- `validation.blocking_reasons: []`
+
+## Evidence
+
+Measured on each board after routing at the JLC standard floor:
+
+| Board | Nets | Open nets | Vias | Segments | DRC errors | Unconnected |
+|---|---|---|---|---|---|---|
+| `sensor_logger` | 6 | 0 | 8 | 81 | 0 | 0 |
+| `env_logger` | 6 | 0 | 8 | 91 | 0 | 0 |
+| `climate_node` | 6 | 0 | 8 | 73 | 0 | 0 |
+| `water_leak_sensor` | 8 | 0 | 7 | 87 | 0 | 0 |
+
+## Fabricate
+
+The exporter writes a complete KiCad project and manufacturing inputs:
+
+```bash
+synth export-kicad <board>.synth --out out/<board> --gerbers --drill
+```
+
+Outputs: `<board>.kicad_pro`, `<board>.kicad_sch`, `<board>.kicad_sym`,
+`<board>.kicad_pcb`, `bom.csv`, `pnp.csv`, plus Gerber and drill archives.
+
+> [!WARNING]
+> The compiler marks an export **not for fabrication** when the copper has not
+> passed routing. Always route first (`synth route`) and confirm
+> `state: routed` / `open_nets: 0` before releasing Gerbers.
+
+## Screenshots
+
+The four boards and their routed copper render as schematic and PCB images.
+Maintainers can publish them into the shared image bucket and reference them
+here:
+
+```bash
+# render (KiCad 10)
+kicad-cli sch export svg --output out/<board> out/<board>/<board>.kicad_sch
+kicad-cli pcb export svg --layers F.Cu,B.Cu,Edge.Cuts --output out/<board>/<board>-pcb.svg out/<board>/<board>.kicad_pcb
+
+# publish (requires CLOUDFLARE_API_TOKEN with R2 Edit)
+pnpm run publish-image out/<board>/<board>-pcb.svg screenshots/<board>-pcb.svg
+```
+
+Then reference them in this page with plain markdown:
+
+```markdown
+![sensor_logger routed PCB](/screenshots/sensor_logger-pcb.svg)
+```
