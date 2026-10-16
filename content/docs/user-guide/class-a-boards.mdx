@@ -120,41 +120,58 @@ cockpit, and **board** renders (schematic + routed copper).
 
 ### Platform
 
-| Shot | What it shows |
-|---|---|
-| `platform-login.png` | Sign-in |
-| `platform-projects.png` | Workspace home — projects list, New design |
-| `platform-board-workspace.png` | A Class-A board workspace: title, revision, Build design, assistant panel, status bar |
-| `platform-build.png` | “Board ready to review” after a successful physical build |
+![Synth sign-in](/media/class-a/platform-login.png)
+
+![Synth workspace home — projects](/media/class-a/platform-projects.png)
+
+![A Class-A board workspace in the cockpit](/media/class-a/platform-board-workspace.png)
 
 ### Boards
 
-| Board | Schematic | Routed PCB |
-|---|---|---|
-| `sensor_logger` | `sensor_logger-schematic.svg` | `sensor_logger-pcb.svg` |
-| `env_logger` | `env_logger-schematic.svg` | `env_logger-pcb.svg` |
-| `climate_node` | `climate_node-schematic.svg` | `climate_node-pcb.svg` |
-| `water_leak_sensor` | `water_leak_sensor-schematic.svg` | `water_leak_sensor-pcb.svg` |
+`sensor_logger` — schematic and routed copper:
+
+![sensor_logger schematic](/media/class-a/sensor_logger-schematic.svg)
+![sensor_logger routed PCB](/media/class-a/sensor_logger-pcb.svg)
+
+`env_logger`:
+
+![env_logger schematic](/media/class-a/env_logger-schematic.svg)
+![env_logger routed PCB](/media/class-a/env_logger-pcb.svg)
+
+`climate_node`:
+
+![climate_node schematic](/media/class-a/climate_node-schematic.svg)
+![climate_node routed PCB](/media/class-a/climate_node-pcb.svg)
+
+`water_leak_sensor`:
+
+![water_leak_sensor schematic](/media/class-a/water_leak_sensor-schematic.svg)
+![water_leak_sensor routed PCB](/media/class-a/water_leak_sensor-pcb.svg)
 
 ### Rendering and publishing
 
-Doc images are served from the shared image bucket, not committed to git.
+These images are committed under `public/media/class-a/` and served directly by
+the static export (the worker only proxies `img/`, `diagrams/` and
+`screenshots/`, so anything under `media/` is served as a normal asset). They
+were produced with:
 
 ```bash
 # board renders (KiCad 10)
 kicad-cli sch export svg --output out/<board> out/<board>/<board>.kicad_sch
 kicad-cli pcb export svg --layers F.Cu,B.Cu,Edge.Cuts \
   --output out/<board>/<board>-pcb.svg <routed>.kicad_pcb
-
-# publish (requires CLOUDFLARE_API_TOKEN with R2 Edit on websites-images)
-pnpm run publish-image out/<board>/<board>.svg        screenshots/<board>-schematic.svg
-pnpm run publish-image out/<board>/<board>-pcb.svg    screenshots/<board>-pcb.svg
-pnpm run publish-image platform-login.png             screenshots/platform-login.png
 ```
 
-Then reference them with plain markdown:
+Large or frequently-changing images can instead live in the shared image
+bucket; publish them there and reference the `screenshots/` path:
+
+```bash
+pnpm run publish-image out/<board>/<board>-pcb.svg screenshots/<board>-pcb.svg
+```
+
+Then reference either location with plain markdown:
 
 ```markdown
-![sensor_logger routed PCB](/screenshots/sensor_logger-pcb.svg)
+![sensor_logger routed PCB](/media/class-a/sensor_logger-pcb.svg)
 ![Synth cockpit board workspace](/screenshots/platform-board-workspace.png)
 ```
