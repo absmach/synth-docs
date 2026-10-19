@@ -1,0 +1,202 @@
+---
+title: Class-A Reference Boards
+description: Four production-clean low-speed embedded boards you can build, route and fabricate end to end with the Synth compiler.
+new: true
+---
+
+# Class-A Reference Boards
+
+The Class-A reference set is four low-speed embedded boards that exercise the
+whole toolchain — parse → ERC → placement → routing → DRC — and come out the
+other side **fully routed and good to fabricate**. They are small, cheap, and
+use only coarse-pitch parts so every via meets a standard JLC floor.
+
+> [!TIP]
+> For the step-by-step journey these boards follow (describe → propose → accept →
+> build → route → fabricate), see [From Prompt to PCB](/user-guide/prompt-to-pcb).
+
+| Board               | MCU          | Sensor       | Regulator     | Power in      | Layers |
+| ------------------- | ------------ | ------------ | ------------- | ------------- | ------ |
+| `sensor_logger`     | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4      |
+| `env_logger`        | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4      |
+| `climate_node`      | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4      |
+| `water_leak_sensor` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4      |
+
+Every board fits the Level-A envelope: one MCU, one I²C sensor, one LDO, one
+power connector, ≤ 4 copper layers, no high-speed or dense-digital features.
+
+> [!NOTE]
+> The coarse `atmega328p` (DIP-28, 2.54 mm) and `jst_ph_4pin` (2.0 mm) are a
+> deliberate choice. Fine-pitch parts such as an LQFP-48 (0.5 mm) or micro-USB
+> (0.6 mm) can only escape through via-in-pad micro-vias below the standard
+> drill floor, which no standard fab profile accepts. Moving the MCU and
+> connector to coarse pitch removes that need.
+
+## Pipeline
+
+```mermaid
+flowchart LR
+    SRC[".synth source"] --> P[parse + resolve]
+    P --> ERC[validate / ERC]
+    ERC --> PLACE[placement]
+    PLACE --> ROUTE["route (kicad-routing-tools)"]
+    ROUTE --> DRC["DRC + connectivity"]
+    DRC --> FAB["KiCad project + Gerbers + BOM"]
+```
+
+## Validate
+
+```bash
+synth validate <board>.synth
+```
+
+Exits `0` with no error-level diagnostics (each board reports four
+non-blocking warnings: thermal, supply, anomaly, plane reference).
+
+## Route to a standard floor
+
+Routing is performed by an external engine. Synth never generates copper; it
+hands the exported `.kicad_pro` / `.kicad_pcb` to the router and then checks the
+result independently.
+
+```bash
+synth route <board>.synth \
+  --router kicad-routing-tools \
+  --kicad-routing-tools-repo "$KICAD_ROUTING_TOOLS_REPO" \
+  --krt-fab-overrides fab_jlc_standard.txt \
+  --krt-escalation board
+```
+
+`fab_jlc_standard.txt` pins the via/track/clearance floors to the JLC standard
+tier instead of the router's own defaults:
+
+```toml
+via_diameter = 0.60
+via_drill = 0.30
+clearance = 0.127
+track_width = 0.127
+hole_to_hole = 0.20
+pad_hole_to_hole = 0.45
+board_edge = 0.20
+```
+
+A good-to-produce board reports:
+
+- `state: routed`
+- `statistics.open_nets: 0`
+- `validation.blocking_reasons: []`
+
+## Evidence
+
+Measured on each board after routing at the JLC standard floor:
+
+| Board               | Nets | Open nets | Vias | Segments | DRC errors | Unconnected |
+| ------------------- | ---- | --------- | ---- | -------- | ---------- | ----------- |
+| `sensor_logger`     | 6    | 0         | 8    | 81       | 0          | 0           |
+| `env_logger`        | 6    | 0         | 8    | 91       | 0          | 0           |
+| `climate_node`      | 6    | 0         | 8    | 73       | 0          | 0           |
+| `water_leak_sensor` | 8    | 0         | 7    | 87       | 0          | 0           |
+
+## Fabricate
+
+The exporter writes a complete KiCad project and manufacturing inputs:
+
+```bash
+synth export-kicad <board>.synth --out out/<board> --gerbers --drill
+```
+
+Outputs: `<board>.kicad_pro`, `<board>.kicad_sch`, `<board>.kicad_sym`,
+`<board>.kicad_pcb`, `bom.csv`, `pnp.csv`, plus Gerber and drill archives.
+
+> [!WARNING]
+> The compiler marks an export **not for fabrication** when the copper has not
+> passed routing. Always route first (`synth route`) and confirm
+> `state: routed` / `open_nets: 0` before releasing Gerbers.
+
+## Screenshots
+
+Two families of images ship with this page: **platform** shots of the Synth
+cockpit, and **board** renders (schematic + routed copper).
+
+### Platform
+
+![Synth sign-in](/media/class-a/platform-login.png)
+
+![Synth workspace home — projects](/media/class-a/platform-projects.png)
+
+![A Class-A board workspace in the cockpit](/media/class-a/platform-board-workspace.png)
+
+### Boards
+
+Each board starts from a plain-language prompt. These are the prompts used to
+build the corpus, so you can reproduce any board from scratch.
+
+#### `sensor_logger`
+
+> A four-layer low-speed sensor logger. Use a DIP-28 ATmega328P MCU and a
+> 2.0 mm JST-PH power connector — not a fine-pitch MCU or micro-USB, so it can
+> route on a standard fab floor. Add a BME680 temperature/humidity sensor on
+> I2C with 4.7k pull-ups, a 3V3 AMS1117 regulator from the 5V input, a 10k
+> reset pull-up with a tactile reset switch, and 100nF decoupling on every
+> rail.
+
+![sensor_logger schematic](/media/class-a/sensor_logger-schematic.svg)
+![sensor_logger routed PCB](/media/class-a/sensor_logger-pcb.svg)
+
+#### `env_logger`
+
+> A four-layer environmental logger with extended supply decoupling. DIP-28
+> ATmega328P and a 2.0 mm JST-PH power connector, an AMS1117 3V3 regulator, a
+> BME680 on I2C with 4.7k pull-ups, a reset pull-up and tactile switch, and
+> extra 100nF/1uF decoupling on each supply pin.
+
+![env_logger schematic](/media/class-a/env_logger-schematic.svg)
+![env_logger routed PCB](/media/class-a/env_logger-pcb.svg)
+
+#### `climate_node`
+
+> A compact four-layer climate node. DIP-28 ATmega328P and a 2.0 mm JST-PH
+> power connector, an AMS1117 3V3 regulator, a BME680 on I2C with 4.7k
+> pull-ups, a reset pull-up and tactile switch, and the minimum decoupling
+> needed on every rail.
+
+![climate_node schematic](/media/class-a/climate_node-schematic.svg)
+![climate_node routed PCB](/media/class-a/climate_node-pcb.svg)
+
+#### `water_leak_sensor`
+
+> A four-layer water-leak sensor with a status LED. DIP-28 ATmega328P and a
+> 2.0 mm JST-PH power connector, an AMS1117 3V3 regulator, a BME680 on I2C with
+> 4.7k pull-ups, a 1k resistor and red LED on a GPIO for status, a reset
+> pull-up and tactile switch, and decoupling on every rail.
+
+![water_leak_sensor schematic](/media/class-a/water_leak_sensor-schematic.svg)
+![water_leak_sensor routed PCB](/media/class-a/water_leak_sensor-pcb.svg)
+
+### Rendering and publishing
+
+These images are committed under `public/media/class-a/` and served directly by
+the static export (the worker only proxies `img/`, `diagrams/` and
+`screenshots/`, so anything under `media/` is served as a normal asset). They
+were produced with:
+
+```bash
+# board renders (KiCad 10)
+kicad-cli sch export svg --output out/<board> out/<board>/<board>.kicad_sch
+kicad-cli pcb export svg --layers F.Cu,B.Cu,Edge.Cuts \
+  --output out/<board>/<board>-pcb.svg <routed>.kicad_pcb
+```
+
+Large or frequently-changing images can instead live in the shared image
+bucket; publish them there and reference the `screenshots/` path:
+
+```bash
+pnpm run publish-image out/<board>/<board>-pcb.svg screenshots/<board>-pcb.svg
+```
+
+Then reference either location with plain markdown:
+
+```markdown
+![sensor_logger routed PCB](/media/class-a/sensor_logger-pcb.svg)
+![Synth cockpit board workspace](/screenshots/platform-board-workspace.png)
+```
