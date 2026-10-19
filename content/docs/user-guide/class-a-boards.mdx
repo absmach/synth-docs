@@ -15,12 +15,12 @@ use only coarse-pitch parts so every via meets a standard JLC floor.
 > For the step-by-step journey these boards follow (describe → propose → accept →
 > build → route → fabricate), see [From Prompt to PCB](/user-guide/prompt-to-pcb).
 
-| Board | MCU | Sensor | Regulator | Power in | Layers |
-|---|---|---|---|---|---|
-| `sensor_logger` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4 |
-| `env_logger` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4 |
-| `climate_node` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4 |
-| `water_leak_sensor` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4 |
+| Board               | MCU          | Sensor       | Regulator     | Power in      | Layers |
+| ------------------- | ------------ | ------------ | ------------- | ------------- | ------ |
+| `sensor_logger`     | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4      |
+| `env_logger`        | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4      |
+| `climate_node`      | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4      |
+| `water_leak_sensor` | `atmega328p` | `bme680_env` | `ams1117_3v3` | `jst_ph_4pin` | 4      |
 
 Every board fits the Level-A envelope: one MCU, one I²C sensor, one LDO, one
 power connector, ≤ 4 copper layers, no high-speed or dense-digital features.
@@ -90,12 +90,12 @@ A good-to-produce board reports:
 
 Measured on each board after routing at the JLC standard floor:
 
-| Board | Nets | Open nets | Vias | Segments | DRC errors | Unconnected |
-|---|---|---|---|---|---|---|
-| `sensor_logger` | 6 | 0 | 8 | 81 | 0 | 0 |
-| `env_logger` | 6 | 0 | 8 | 91 | 0 | 0 |
-| `climate_node` | 6 | 0 | 8 | 73 | 0 | 0 |
-| `water_leak_sensor` | 8 | 0 | 7 | 87 | 0 | 0 |
+| Board               | Nets | Open nets | Vias | Segments | DRC errors | Unconnected |
+| ------------------- | ---- | --------- | ---- | -------- | ---------- | ----------- |
+| `sensor_logger`     | 6    | 0         | 8    | 81       | 0          | 0           |
+| `env_logger`        | 6    | 0         | 8    | 91       | 0          | 0           |
+| `climate_node`      | 6    | 0         | 8    | 73       | 0          | 0           |
+| `water_leak_sensor` | 8    | 0         | 7    | 87       | 0          | 0           |
 
 ## Fabricate
 
