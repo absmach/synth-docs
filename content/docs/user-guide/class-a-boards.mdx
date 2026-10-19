@@ -128,22 +128,47 @@ cockpit, and **board** renders (schematic + routed copper).
 
 ### Boards
 
-`sensor_logger` — schematic and routed copper:
+Each board starts from a plain-language prompt. These are the prompts used to
+build the corpus, so you can reproduce any board from scratch.
+
+#### `sensor_logger`
+
+> A four-layer low-speed sensor logger. Use a DIP-28 ATmega328P MCU and a
+> 2.0 mm JST-PH power connector — not a fine-pitch MCU or micro-USB, so it can
+> route on a standard fab floor. Add a BME680 temperature/humidity sensor on
+> I2C with 4.7k pull-ups, a 3V3 AMS1117 regulator from the 5V input, a 10k
+> reset pull-up with a tactile reset switch, and 100nF decoupling on every
+> rail.
 
 ![sensor_logger schematic](/media/class-a/sensor_logger-schematic.svg)
 ![sensor_logger routed PCB](/media/class-a/sensor_logger-pcb.svg)
 
-`env_logger`:
+#### `env_logger`
+
+> A four-layer environmental logger with extended supply decoupling. DIP-28
+> ATmega328P and a 2.0 mm JST-PH power connector, an AMS1117 3V3 regulator, a
+> BME680 on I2C with 4.7k pull-ups, a reset pull-up and tactile switch, and
+> extra 100nF/1uF decoupling on each supply pin.
 
 ![env_logger schematic](/media/class-a/env_logger-schematic.svg)
 ![env_logger routed PCB](/media/class-a/env_logger-pcb.svg)
 
-`climate_node`:
+#### `climate_node`
+
+> A compact four-layer climate node. DIP-28 ATmega328P and a 2.0 mm JST-PH
+> power connector, an AMS1117 3V3 regulator, a BME680 on I2C with 4.7k
+> pull-ups, a reset pull-up and tactile switch, and the minimum decoupling
+> needed on every rail.
 
 ![climate_node schematic](/media/class-a/climate_node-schematic.svg)
 ![climate_node routed PCB](/media/class-a/climate_node-pcb.svg)
 
-`water_leak_sensor`:
+#### `water_leak_sensor`
+
+> A four-layer water-leak sensor with a status LED. DIP-28 ATmega328P and a
+> 2.0 mm JST-PH power connector, an AMS1117 3V3 regulator, a BME680 on I2C with
+> 4.7k pull-ups, a 1k resistor and red LED on a GPIO for status, a reset
+> pull-up and tactile switch, and decoupling on every rail.
 
 ![water_leak_sensor schematic](/media/class-a/water_leak_sensor-schematic.svg)
 ![water_leak_sensor routed PCB](/media/class-a/water_leak_sensor-pcb.svg)
