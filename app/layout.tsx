@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const base = baseOptions();
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="flex flex-col min-h-screen">
+      <body className="flex flex-col min-h-screen" suppressHydrationWarning>
         <Provider>
           <DocsLayout
             {...base}
