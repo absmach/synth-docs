@@ -10,7 +10,7 @@ const BASE_PATH =
 
 /** @type {import('next').NextConfig} */
 const config = {
-  output: "export",
+  ...(IS_DEV ? {} : { output: "export" }),
   trailingSlash: true,
   reactStrictMode: true,
   serverExternalPackages: ["@takumi-rs/image-response"],
