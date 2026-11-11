@@ -1,0 +1,21 @@
+---
+title: synth-geometry Crate
+description: "Integer-nanometer geometry, stackups, layers, and spatial primitives for the placer and router."
+---
+
+# `synth-geometry` Crate
+
+Every coordinate that flows through the placer and router is an `i64` measured in nanometres. Floating-point geometry accumulates rounding error; integer nanometres keep a 100 mm board exact and make the output deterministic.
+
+## Core types
+
+- `Point`, `Rect`, `Rotation`, `Layer` — the primitive geometry.
+- `mm_to_nm`, `nm_to_mm` — explicit unit conversion at the boundaries.
+- `StackupProfile`, `CopperLayerGeometry`, `TraceModel`, `StackupSource` — the physical stackup and impedance model.
+- `sim_oracles` — deterministic geometry oracles used by tests and repair passes.
+
+The crate also provides the spatial indexing and polygon operations the placer, router, and DRC share: bounding boxes, R-tree queries, and polygon intersection.
+
+## Where it sits
+
+`synth-place`, `synth-route`, `synth-router`, and `synth-drc` all use these types. A board's stackup and layer geometry come from here, not from a host KiCad installation, so the same source produces the same geometry on every machine.

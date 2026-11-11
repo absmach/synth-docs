@@ -1,54 +1,88 @@
 ---
 title: Enterprise Edition Overview
-description: What Synth Enterprise Edition provides — web dashboard, cloud compilation, teams, and compliance.
-enterprise: true
+description: "What Synth Enterprise Edition is, who it is for, and the twenty-minute path from an account to a reviewed, exportable board."
 ---
 
 # Synth Enterprise Edition
 
-**Synth Enterprise Edition (Synth EE)** extends the open-source Synth compiler with collaboration, cloud scale, and compliance capabilities for engineering teams.
+Synth Enterprise Edition (Synth EE) is the hosted version of Synth. The compiler, the SynthSpec language, and the command-line tool are the same open-source engine you can run locally. Synth EE adds a browser workspace, managed builds, team access, and a review record around that engine.
 
-> [!IMPORTANT]
-> Synth EE is closed source and available through a commercial license. This section describes EE features. The core Synth compiler — including the full CLI, DSL, and MCP server — is open source and free to use.
+If you have used the open-source CLI, nothing you know changes. If you have never designed a board before, this page gives you the mental model and points you at the shortest working path.
 
----
+<Callout type="info" title="You do not need to install anything">
+
+Everything in this guide runs in a browser. The open-source CLI is still the right tool for CI, scripting, and offline work — see the [Community documentation](/user-guide/installation) — but you do not need it to complete the enterprise walkthrough.
+
+</Callout>
+
+## The Twenty-Minute Path
+
+Follow these pages in order. Each one ends with something you can see on screen.
+
+| #   | Page                                                                         | What you get                                                                                |
+| :-- | :--------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ |
+| 1   | [Sign In and Build Your First Board](/user-guide/enterprise/getting-started) | A real qualification board, imported, built, checked, routed, and exported. _15–20 min_     |
+| 2   | [Workspace Tour](/user-guide/enterprise/synth-ui)                            | What every panel does, and when to use it. _8 min_                                          |
+| 3   | [Builds, Checks, and Recovery](/user-guide/enterprise/agent-worker)          | How to read a status, what a finding means, and how to recover from a failed build. _6 min_ |
+| 4   | [Teams and Access](/user-guide/enterprise/tenant-management)                 | Invite people, assign roles, and read the audit trail. _5 min_                              |
+| 5   | [Qualification and Evidence](/user-guide/enterprise/qualification)           | The evidence a release carries and how to reproduce it. _6 min_                             |
+
+Administrators should also read [Admin and Billing](/user-guide/enterprise/admin-and-billing).
 
 ## What Synth EE Adds
 
-### Web-Based AI Cockpit (SynthUI)
+| Capability                                                    | Community (open source) | Enterprise (Synth EE) |
+| :------------------------------------------------------------ | :---------------------: | :-------------------: |
+| SynthSpec compiler, validation, ERC                           |           ✅            |          ✅           |
+| KiCad, Gerber, drill, BOM export                              |           ✅            |          ✅           |
+| Component registry and part import                            |           ✅            |          ✅           |
+| `synth` CLI and MCP server                                    |           ✅            |          ✅           |
+| Browser workspace with PCB, schematic, and 3D views           |           ❌            |          ✅           |
+| Managed build queue and background workers                    |           ❌            |          ✅           |
+| Multi-model design chat (when a model provider is configured) |           ❌            |          ✅           |
+| Teams, invitations, roles, and audit trail                    |           ❌            |          ✅           |
+| Release evidence and qualification records                    |           ❌            |          ✅           |
 
-An interactive, browser-based Explainability & Review Cockpit where hardware engineers co-design boards with conversational AI copilots (Codex, Claude, Gemini, Mistral). Features interactive patch proposal acceptance, real-time DREAMPlace placement and Pathfinder autorouting canvas, live `.synth` source inspection, and DRC review. See [SynthUI AI Cockpit](/user-guide/enterprise/synth-ui).
+## How the Pieces Fit
 
-### Cloud Compilation
+You work in a browser. The browser never holds a role, a compiler binary, or a manufacturing credential. Every action is checked on the server.
 
-Designs are compiled by a fleet of worker nodes managed by Synth EE. Large or complex boards that would take minutes on a laptop are processed in the background while you continue working. Results appear in the SynthUI dashboard when ready.
+```mermaid
+flowchart LR
+    B["Browser<br/>workspace"] --> S["Synth SaaS<br/>API + job state"]
+    S --> A["Atom<br/>identity, tenants,<br/>membership, audit"]
+    S --> W["Build workers<br/>compiler + agent runs"]
+    S --> R["KiCad renderer<br/>placement, route,<br/>DRC, schematic"]
+    S --> F["Artifact storage<br/>KiCad, Gerber, BOM"]
+    W --> S
+    R --> S
+```
 
-### Team Collaboration & Access Control
+| Piece                | What it does                                                                                              | You touch it?        |
+| :------------------- | :-------------------------------------------------------------------------------------------------------- | :------------------- |
+| **Workspace**        | The browser app at `/app` — boards, tools, chat, review.                                                  | Yes, daily.          |
+| **Synth SaaS**       | Owns projects, revisions, builds, checks, and release state.                                              | No.                  |
+| **Atom**             | The identity and tenancy service. Owns accounts, workspaces, invitations, permissions, and the audit log. | Only through the UI. |
+| **Build workers**    | Run the compiler and any durable agent workflow. A closed browser tab does not stop a build.              | No.                  |
+| **KiCad renderer**   | Runs the native KiCad checks and renders the schematic, PCB, and 3D views.                                | No.                  |
+| **Artifact storage** | Holds exported KiCad, Gerber, drill, BOM, and evidence files.                                             | Through **Export**.  |
 
-Invite your team, assign roles, and control who can edit designs, trigger builds, or export production artifacts. Synth EE integrates with your existing identity provider via SSO/SAML 2.0. See [Tenant Management](/user-guide/enterprise/tenant-management).
+<Callout type="warn" title="The source is the design">
 
-### Qualification & Compliance Audit Trails
+A `.synth` file is the only editable design input. The KiCad schematic, PCB, BOM, and Gerber files are generated artifacts. Editing them and then rebuilding will silently discard the edit. Make every design change in the source, or through a tool that edits the source for you.
 
-For regulated industries (aerospace, automotive, medical), Synth EE can generate cryptographically signed evidence bundles — compiler logs, DRC reports, and netlist checksums — tied to each build, suitable for IPC Class 3, DO-254, and ISO 26262 workflows. See [Qualification](/user-guide/enterprise/qualification).
+</Callout>
 
----
+## What You Need
 
-## Synth EE vs Community Edition
+To follow the walkthrough you need:
 
-| Capability | Community | Enterprise |
-| :--- | :---: | :---: |
-| Synth DSL compiler | ✅ | ✅ |
-| Placement & auto-routing | ✅ | ✅ |
-| KiCad & Gerber export | ✅ | ✅ |
-| MCP server for AI assistants | ✅ | ✅ |
-| SynthUI web dashboard | ❌ | ✅ |
-| Cloud background compilation | ❌ | ✅ |
-| Team management & SSO | ❌ | ✅ |
-| Qualification & audit trails | ❌ | ✅ |
-| Differential pair constraints | ❌ | ✅ |
+1. **An account.** Your organization may send an invitation, or an administrator may give you a beta invite code.
+2. **A modern browser.** Chrome, Edge, Firefox, or Safari from the last two years.
+3. **Nothing else.** No KiCad install, no compiler, no local server — unless you are the person deploying Synth EE.
 
----
+If you are the administrator standing up a new deployment, use the deployment notes in the repository.
 
 ## Getting Access
 
-Contact [sales@synth.dev](mailto:sales@synth.dev) or visit [synth.dev/enterprise](https://synth.dev/enterprise) to request a trial or discuss licensing.
+Synth EE is commercially licensed. Ask your Synth contact for a workspace invitation, or use the contact link on the Synth website. Once you have an account, continue to [Sign In and Build Your First Board](/user-guide/enterprise/getting-started).

@@ -13,7 +13,13 @@ const DefaultPre = defaultMdxComponents.pre as
   | ((props: ComponentPropsWithoutRef<"pre">) => ReactNode)
   | undefined;
 
-const DOC_IMAGE_PATTERN = /^\/docs\/synth\/(img|diagrams|screenshots)\//;
+// Content images are rewritten by `remarkDocImages` to the edition base path.
+// That is `/docs/synth` in production and the site root during local dev, so
+// match whichever base path this build was compiled with.
+const IMAGE_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const DOC_IMAGE_PATTERN = new RegExp(
+  `^${IMAGE_BASE_PATH.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/(img|diagrams|screenshots)/`,
+);
 
 type MdxNodeWithProps = {
   props?: {

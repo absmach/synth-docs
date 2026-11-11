@@ -19,6 +19,8 @@ export interface R2Bucket {
 
 export interface Env {
   IMAGES_BUCKET: R2Bucket;
+  /** Workers Static Assets binding, used when an object is not in R2 yet. */
+  ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
 export interface ExecutionContext {

@@ -1,12 +1,18 @@
 {
   "title": "User Guide",
   "pages": [
+    "---Start Here---",
+    "concepts",
+    "installation",
     "quick-start",
+    "first-board",
+    "---Reference---",
     "dsl-reference",
     "cli",
     "kicad-export",
     "mcp-server",
     "registry-and-fixtures",
+    "---Enterprise---",
     "enterprise"
   ]
 }

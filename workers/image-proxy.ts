@@ -51,6 +51,11 @@ export default {
     if (!route || rest.length === 0) return notFound();
 
     const path = decodeURIComponent(rest.join("/"));
-    return route.handler(path, env, request, ctx);
+    const response = await route.handler(path, env, request, ctx);
+    // A fresh checkout can ship the screenshots in public/ before they are
+    // published to R2. Prefer R2, but fall back to the static export so the
+    // docs never render a broken image.
+    if (response.status === 404) return env.ASSETS.fetch(request);
+    return response;
   },
 };

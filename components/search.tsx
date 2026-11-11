@@ -1,5 +1,4 @@
 "use client";
-import { create } from "@orama/orama";
 import { useDocsSearch } from "fumadocs-core/search/client";
 import {
   SearchDialog,
@@ -13,20 +12,13 @@ import {
   type SharedProps,
 } from "fumadocs-ui/components/dialog/search";
 import { useI18n } from "fumadocs-ui/contexts/i18n";
-
-function initOrama() {
-  return create({
-    schema: { _: "string" },
-    language: "english",
-  });
-}
+import { BASE_PATH } from "@/lib/base-path";
 
 export default function DefaultSearchDialog(props: SharedProps) {
   const { locale } = useI18n();
   const { search, setSearch, query } = useDocsSearch({
     type: "static",
-    from: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/search`,
-    initOrama,
+    from: `${BASE_PATH}/api/search`,
     locale,
   });
 

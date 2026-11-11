@@ -1,8 +1,16 @@
 ---
 title: synth-smt Crate
-description: SMT solver integration for geometric and electrical constraint satisfaction.
+description: "Embedded single-variable SMT-LIB2 solver for quantitative diagnostics."
 ---
 
 # `synth-smt` Crate
 
-The `synth-smt` crate translates complex spatial and electrical constraints into SMT-LIB formulas to assist placement and routing algorithms in finding provably optimal layouts.
+`synth-smt` is a small, pure-Rust solver for the single-variable linear constraints Synth's ERC rules emit. It evaluates a constraint in sub-microsecond time and avoids an external C/C++ dependency such as Z3.
+
+## Scope
+
+- One variable per assertion (a width, a clearance, a current, a temperature rise).
+- Linear inequalities and equalities.
+- A `solve_smt` patch kind lets an agent ask for the range that satisfies the design's constraints.
+
+The crate is intentionally not a general SMT solver. If a rule needs multi-variable reasoning, it belongs in `synth-validate` as a dedicated rule, not as a larger solver dependency.

@@ -1,4 +1,4 @@
 {
   "title": "Developer Guide",
-  "pages": ["architecture", "crates", "enterprise"]
+  "pages": ["architecture", "crates"]
 }
