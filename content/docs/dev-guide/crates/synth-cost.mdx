@@ -1,0 +1,23 @@
+---
+title: synth-cost Crate
+description: "Pure, reproducible manufacturing cost reports from frozen inputs."
+---
+
+# `synth-cost` Crate
+
+`synth-cost` calculates manufacturing cost from frozen inputs. It performs no network or filesystem I/O: the caller supplies supplier offers, PCB specifications, dated fee rules, and optional quotes.
+
+Replaying the same `CostInput` produces the same `CostReport`. Money is accumulated as integer micro-units, never floating-point totals.
+
+## Inputs
+
+- `PartCostInput`, `FrozenOffer` — per-part offers and quantities.
+- `QuantityScenario` — board and assembly counts.
+- `PcbSpecification`, `PcbEstimateProfile`, `PcbQuote` — board fabrication.
+- `AssemblyFeeRule`, `AssemblyInput` — assembly.
+- `DeliveryInput` — shipping and fees.
+- `CostInput` — the complete frozen input.
+
+## Output
+
+`CostReport` with `CostLine`s, `CostSource`, `CostLineStatus`, `Money`, and `Currency`. A budget outcome is `within_budget`, `over_budget`, or unresolved; unresolved evidence is never treated as a budget pass.

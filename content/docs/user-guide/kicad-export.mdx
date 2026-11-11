@@ -23,13 +23,13 @@ Download KiCad from [kicad.org/download](https://www.kicad.org/download/).
 synth export-kicad board.synth --out output/board
 ```
 
-| File | Opens in | Contains |
-| :--- | :--- | :--- |
-| `board.kicad_pro` | KiCad | Project file — open this to load the full project |
-| `board.kicad_sch` | KiCad Schematic Editor | Net connections, component symbols, power flags |
-| `board.kicad_sym` | (loaded by `.kicad_sch`) | Symbol definitions referenced by the schematic |
-| `board.kicad_pcb` | KiCad PCB Editor | Component footprints, copper tracks, board outline |
-| `bom.csv` | Spreadsheet | Bill of materials with reference designators, values, MPN, and LCSC part numbers |
+| File              | Opens in                 | Contains                                                                         |
+| :---------------- | :----------------------- | :------------------------------------------------------------------------------- |
+| `board.kicad_pro` | KiCad                    | Project file — open this to load the full project                                |
+| `board.kicad_sch` | KiCad Schematic Editor   | Net connections, component symbols, power flags                                  |
+| `board.kicad_sym` | (loaded by `.kicad_sch`) | Symbol definitions referenced by the schematic                                   |
+| `board.kicad_pcb` | KiCad PCB Editor         | Component footprints, copper tracks, board outline                               |
+| `bom.csv`         | Spreadsheet              | Bill of materials with reference designators, values, MPN, and LCSC part numbers |
 
 ### Optional Fabrication Outputs
 
@@ -39,12 +39,12 @@ Additional flags shell out to `kicad-cli` to produce manufacturing artifacts in 
 synth export-kicad board.synth --out output/board --gerbers --drill --step
 ```
 
-| Flag | Output | Location |
-| :--- | :--- | :--- |
-| `--gerbers` | RS-274X Gerber files | `output/board/gerbers/` |
-| `--drill` | Excellon drill files + PDF map | `output/board/drill/` |
-| `--step` | 3D STEP model | `output/board/board.step` |
-| `--pnp` | Pick-and-place CSV | `output/board/pnp.csv` |
+| Flag        | Output                         | Location                  |
+| :---------- | :----------------------------- | :------------------------ |
+| `--gerbers` | RS-274X Gerber files           | `output/board/gerbers/`   |
+| `--drill`   | Excellon drill files + PDF map | `output/board/drill/`     |
+| `--step`    | 3D STEP model                  | `output/board/board.step` |
+| `--pnp`     | Pick-and-place CSV             | `output/board/pnp.csv`    |
 
 These require `kicad-cli` to be installed and on your `PATH`. Get it with [KiCad](https://www.kicad.org/download/).
 
@@ -72,12 +72,26 @@ kicad output/board/board.kicad_pcb
 
 ## The Ownership Rule
 
-> [!IMPORTANT]
-> **Never hand-edit the generated KiCad files.** They are byte-deterministic re-exports — any manual edit is silently destroyed on the next `synth export-kicad` run.
->
-> Make changes in the `.synth` source file, then re-export. This is intentional: the `.synth` file is the single source of truth for connectivity, values, and part numbers.
+<Callout type="warn">
 
-If you want to adjust visual positions of schematic symbols, use the `synth preview` browser to drag them — offsets are saved to a `<design>.synth.layout.toml` sidecar file that is preserved across exports.
+**Never hand-edit the generated KiCad files.** They are byte-deterministic re-exports — any manual edit is silently destroyed on the next `synth export-kicad` run.
+
+Make changes in the `.synth` source file, then re-export. This is intentional: the `.synth` file is the single source of truth for connectivity, values, and part numbers.
+
+</Callout>
+
+To adjust visual positions, write them to a layout sidecar beside the design, which is preserved across exports. There are two, with the same schema but different coordinate spaces:
+
+| Sidecar                          | Coordinate space                                      | Written by                    |
+| :------------------------------- | :---------------------------------------------------- | :---------------------------- |
+| `<design>.schematic.layout.toml` | Sheet millimetres — where a symbol sits on the page   | `synth_mutate_layout`         |
+| `<design>.placement.layout.toml` | Board millimetres — where a footprint sits on the PCB | `synth_write_layout_override` |
+
+<Callout type="warn">
+
+Do not mix the two. Passing one where the other is expected silently misplaces parts. The older shared `<design>.synth.layout.toml` is deprecated: it is still read as a fallback for placement, so pre-split boards keep their positions, but new overrides are never written there.
+
+</Callout>
 
 ---
 

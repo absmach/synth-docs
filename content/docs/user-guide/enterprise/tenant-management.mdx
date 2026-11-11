@@ -1,55 +1,152 @@
 ---
-title: Teams & Access Control
-description: Roles, permissions, and SSO configuration in Synth Enterprise Edition.
-enterprise: true
+title: Teams and Access
+description: "Invite people to a workspace, assign roles, understand the last-admin rule, and read the audit trail."
 ---
 
-# Teams & Access Control
+# Teams and Access
 
-Synth EE supports multi-tenant organizations, enterprise Single Sign-On (SSO), and role-based access control (RBAC) so you can manage who can view, edit, build, and export designs.
+Synth EE is multi-tenant. A **workspace** (the UI also calls it an organization or tenant) owns its projects, members, and audit trail. A person can belong to more than one workspace and switch between them without signing out.
 
----
-
-## Roles
-
-Every user in your organization is assigned one role:
-
-| Role | What they can do |
-| :--- | :--- |
-| **Organization Admin** | Invite and remove users, assign roles, manage billing, configure SSO and security policies, create/delete projects |
-| **Hardware Engineer** | Create projects, upload and edit `.synth` design files, trigger builds, download KiCad and Gerber artifacts |
-| **Viewer** | Browse designs, view build history, read DRC reports — no write access |
-| **Auditor** | Read-only access to qualification logs, DRC reports, build attestation evidence, and compliance exports |
-
-Admins can change a user's role at any time from **Settings → Team**.
+Atom, the identity service, owns accounts and membership. Synth stores a project record, but it never stores a password or a role assignment. Every membership action is checked by Atom on the server; the browser never sends a role.
 
 ---
 
-## Inviting Users
+## Who Can Do What
 
-1. Go to **Settings → Team → Invite Member**.
-2. Enter the user's email address and select their role.
-3. They'll receive an email invitation to join your organization.
+The workspace has two roles you assign directly, plus the roles Atom can grant.
 
-If SSO is configured, users sign in with their company credentials — no separate password required.
+| Role                     | Typical use                 | Can do                                                                                                           |
+| :----------------------- | :-------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| **Admin**                | Team lead, hardware manager | Invite and remove members, manage invitations, view the workspace audit log, manage projects and builds.         |
+| **Member**               | Engineer, reviewer          | Create and edit boards, build, check, route, and export. Cannot manage membership.                               |
+| **Owner** (Atom)         | Workspace owner             | Everything an admin can do, plus ownership-level Atom policy. Usually created when the workspace is provisioned. |
+| **System administrator** | Synth operator              | The cross-workspace admin console at `/admin`. Not a workspace role.                                             |
+
+The exact permissions come from Atom's policy for the workspace. If an action is refused, the UI says Atom did not allow it rather than pretending the workspace is broken.
+
+<Callout type="info" title="The browser is not trusted for roles">
+
+The UI may hide a control you cannot use, but hiding is only a convenience. The server asks Atom on every mutation. A hand-crafted request gets the same answer as the UI.
+
+</Callout>
 
 ---
 
-## Single Sign-On (SSO)
+## Open the Members Page
 
-Synth EE integrates with any identity provider that supports **SAML 2.0** or **OIDC**. Common setups:
+From the sidebar, select **Members**. The page lists the people in the active workspace and the invitations that have not been accepted.
+
+![Members and invitations](/screenshots/enterprise/18-members.png)
+
+Each member row shows the name, the identity, the role, and the status. Each invitation row shows the invitee, the role, the expiry, and the state: **pending**, **accepted**, **expired**, or **revoked**.
+
+---
+
+## Invite Someone
+
+1. Select **Members** in the sidebar.
+2. Enter the person's **email** or Atom identity.
+3. Choose **Member** or **Admin**.
+4. Select **Invite**.
+
+The invitation is created in Atom and an email is sent. The person appears under invitations as **pending** until they accept.
+
+| Action     | When to use it                                                                                        |
+| :--------- | :---------------------------------------------------------------------------------------------------- |
+| **Resend** | The invitation expired or the email did not arrive. Resend creates a fresh link and expiry.           |
+| **Revoke** | You invited the wrong person or changed your mind. Revoke only works while the invitation is pending. |
+| **Remove** | The person is already a member. This removes their access to this workspace.                          |
+
+<Callout type="warn" title="Removing a member is not the same as suspending an account">
+
+**Remove** takes the person out of this workspace. It does not disable their Synth account in other workspaces. Suspending an account is a system-administrator action in the admin console, because it affects every workspace the person belongs to.
+
+</Callout>
+
+---
+
+## The Last-Admin Rule
+
+A workspace must always have at least one admin or owner. Synth refuses to remove the last one.
+
+If you try, you get a **409** with this message:
+
+> This is the workspace's last admin. Make another member an admin before removing them.
+
+To hand over control:
+
+1. Invite or promote another person to **Admin**.
+2. Wait for them to accept.
+3. Remove the original admin.
+
+An admin role held by a **group** also counts, so a workspace managed through an Atom group is not considered admin-less. If Atom cannot list the assignments, Synth refuses the removal rather than guessing.
+
+---
+
+## Invitations You Receive
+
+The **Invitations** page lists invitations addressed to you.
+
+![Your invitations](/screenshots/enterprise/19-invitations.png)
+
+- **Accept** joins the workspace and switches your active workspace to it.
+- **Reject** declines the invitation.
+- **Accept by token** is for an invitation link that did not open the app directly.
+
+An expired invitation cannot be accepted. Ask a workspace admin to send a new one.
+
+---
+
+## Switch Workspaces
+
+If you belong to more than one workspace, the workspace switcher in the sidebar changes the active one. Projects, members, billing, and audit are all scoped to the active workspace.
+
+<Callout type="tip" title="Separate workspaces isolate IP">
+
+Project visibility is workspace-wide. If two teams must not see each other's boards, put them in separate workspaces rather than relying on project-level permissions. Project-level isolation is not currently supported.
+
+</Callout>
+
+---
+
+## Single Sign-On
+
+Synth delegates authentication to Atom. If your deployment has Atom connected to your identity provider, users sign in with their company credentials and no separate Synth password.
+
+Common identity providers:
 
 - Okta
 - Microsoft Entra ID (Azure AD)
 - Google Workspace
 - Auth0
+- Any SAML 2.0 or OIDC provider supported by your Atom deployment
 
-Contact your Synth EE administrator or reach out to [support@synth.dev](mailto:support@synth.dev) for the SSO setup guide specific to your provider.
-
-Once SSO is enabled, password-based login is disabled for your organization.
+SSO is configured by the deployment administrator, not from the workspace UI. Once it is enabled, password sign-in can be disabled for the organization. Ask your administrator for the provider-specific setup.
 
 ---
 
-## Project Permissions
+## The Audit Trail
 
-Access control applies at the organization level. All members of an organization can see all projects within it — project-level isolation is not currently supported. Use separate organizations to isolate sensitive IP between teams.
+Workspace admins can open **Audit log** from the sidebar.
+
+![The audit log is limited to workspace admins](/screenshots/enterprise/20-audit.png)
+
+The audit log records:
+
+- Sign-ins and identity events.
+- Invitations, role changes, and removals.
+- Project and revision changes.
+- Build, check, route, and export actions.
+- Release approvals and policy decisions.
+
+Each entry records the actor, the action, the target, the outcome, and a correlation identifier. It is append-only: there is no update or delete API, and the database rejects updates and deletes.
+
+If you are not a workspace admin, the page tells you that the audit log is limited to workspace admins. Ask an admin if you need a record of activity.
+
+---
+
+## What to Read Next
+
+- [Admin and Billing](/user-guide/enterprise/admin-and-billing) — the system-administrator console.
+- [Qualification and Evidence](/user-guide/enterprise/qualification) — the release record and auditor access.
+- [Admin and Billing](/user-guide/enterprise/admin-and-billing) — the system-administrator console.

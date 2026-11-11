@@ -1,0 +1,32 @@
+---
+title: synth-validate Crate
+description: "The ERC engine: registered electrical and structural rules over the Board IR."
+---
+
+# `synth-validate` Crate
+
+`synth-validate` runs every registered `ErcRule` against the `synth_ir::Board` and emits `synth_diagnostics::Diagnostic`s in rule-registration order.
+
+## Public API
+
+```rust
+use synth_validate::{run_erc, run_erc_with_config, ErcConfig};
+
+let diagnostics = run_erc(&board, "board.synth");
+```
+
+`run_erc_with_config` takes an `ErcConfig` and `PinConflictTable` for deployments that need to adjust a rule's inputs.
+
+## Rule families
+
+- Connectivity: floating pins, output-to-output, power shorts, missing ground.
+- Power: decoupling density, regulator loading, rail topology, thermal estimates.
+- Buses: I²C/SPI pull-ups, USB CC termination, differential-pair constraints.
+- Analog: crystal load capacitors, oscillator drive, ADC reference.
+- Protection: ESD, reverse polarity, TVS placement.
+- Schematic readability: group coverage, inverted power symbols, wire crossings, decoupling distance, long wires, fan-out.
+- Supply: missing MPN/LCSC identity, unverified parts.
+- Footprint: pin-number cross-check against the part's KiCad symbol.
+- Anomaly: a learned graph-anomaly score for statistically unusual structures.
+
+Severity is per diagnostic. A rule may ship as a warning when its finding is advisory for the process, even if its code begins with `E-`.

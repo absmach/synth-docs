@@ -1,0 +1,32 @@
+---
+title: synth-registry Crate
+description: "Part records, pins, capabilities, two-tier resolution, and importers for the Synth component registry."
+---
+
+# `synth-registry` Crate
+
+A _part_ is a concrete electronic component identified by a string id (`rp2350a`, `ams1117_3v3`, `c_generic_0603`). Each part declares its kind, pins with electrical types and semantic capabilities, its KiCad symbol and footprint, and any required support circuitry.
+
+## Resolution order
+
+1. `--registry <DIR>`
+2. `$SYNTH_REGISTRY`
+3. `./registry/parts` (walking up ancestors)
+4. the embedded seed registry
+
+A Tier-2 overlay (`--user-registry` / `$SYNTH_USER_REGISTRY_DIR`) shadows a shipped part. `--strict-registry` promotes that shadowing warning to an error.
+
+## Key types
+
+- `Part`, `Pin`, `ElectricalType`, `PinCapability` — the part model the IR and ERC consume.
+- `Registry` — the merged view after resolution.
+- `loader` — TOML loading and validation.
+- `overlay` — Tier-2 write-back and TOML serialization.
+- `easyeda`, `footprint_svg` — LCSC/EasyEDA import helpers.
+- `qualify` — part qualification and review records.
+- `vector_search` — dense-embedding search over part descriptions.
+- `kicad_pin_check` — cross-check a part's pin numbers against its KiCad symbol.
+
+## Provenance
+
+Parts carry `provenance` fields: `source`, `datasheet_url`, `reviewed_by`, `reviewed_at`. A part without `reviewed_by` is unverified and produces `W-SYNTH-PART-UNVERIFIED`; the manufacturing gate will refuse it unless explicitly allowed.

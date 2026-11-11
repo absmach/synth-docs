@@ -1,0 +1,22 @@
+---
+title: synth-knowledge Crate
+description: "Declarative support-circuit templates and the circuit-design knowledge graph."
+---
+
+# `synth-knowledge` Crate
+
+`synth-knowledge` encodes the subcircuits every production board needs around its principal components — debounce networks, pull-ups, LED current limiting, IC decoupling, relay flyback, USB ESD — as declarative TOML templates rather than hardcoded passes.
+
+## Types
+
+- `KnowledgeGraph` — the compiled set of support templates.
+- `SupportTemplate`, `Condition`, `SupportRef` — a template, its trigger conditions, and the referenced parts.
+- `ReferenceLib`, `ReferenceCircuit` — reference circuits used for checking and generation.
+- `Violation` — a missing or incorrect support circuit.
+- `check_board(board, kg)` — run the graph against a board.
+
+## Why declarative
+
+A new support circuit is a TOML entry with conditions and a template, not a new Rust pass. The same definition drives schematic generation and the ERC check, so the two cannot drift.
+
+Used by `synth-validate` (`E-SYNTH-KG-*`, `E-SYNTH-POWER-*`) and by the MCP `synth_query_knowledge` tool.

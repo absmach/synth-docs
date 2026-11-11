@@ -106,8 +106,11 @@ Download a "Export to KiCad" zip through your browser, then import the file:
 synth part import-zip ~/Downloads/my-ic.zip
 ```
 
-> [!NOTE]
-> Synth never contacts SnapEDA or UltraLibrarian directly. Their terms of service prohibit automated access. You download the zip manually through their website; Synth only reads the local file.
+<Callout type="info">
+
+Synth never contacts SnapEDA or UltraLibrarian directly. Their terms of service prohibit automated access. You download the zip manually through their website; Synth only reads the local file.
+
+</Callout>
 
 ### Author from Scratch
 
@@ -125,9 +128,9 @@ This writes a `.synth.toml` skeleton into your Tier-2 registry with numbered pin
 
 Synth uses a two-tier registry:
 
-| Tier | Location | Contents |
-| :--- | :--- | :--- |
+| Tier                 | Location                                                                 | Contents                                   |
+| :------------------- | :----------------------------------------------------------------------- | :----------------------------------------- |
 | **Tier-1 (shipped)** | `registry/parts/` in the repo, or installed via `synth registry install` | Curated, reviewed parts shipped with Synth |
-| **Tier-2 (user)** | `$SYNTH_USER_REGISTRY_DIR` or `~/.local/share/synth/registry/` | Your imported and custom parts |
+| **Tier-2 (user)**    | `$SYNTH_USER_REGISTRY_DIR` or `~/.local/share/synth/registry/`           | Your imported and custom parts             |
 
 Tier-2 parts shadow Tier-1 parts with the same ID. Run `synth registry doctor` to see any shadowing warnings.

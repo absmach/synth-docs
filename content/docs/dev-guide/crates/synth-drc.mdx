@@ -1,12 +1,34 @@
 ---
 title: synth-drc Crate
-description: Design Rule Checking engine and diagnostic reporter.
+description: "Deterministic DRC, DFM, signal integrity, and native KiCad DRC."
 ---
 
 # `synth-drc` Crate
 
-The `synth-drc` crate validates physical board layouts against manufacturer design rules (minimum trace width, pad-to-pad clearance, drill-to-track distance, annular ring sizes).
+`synth-drc` validates a `(Board, Placement, Routing)` triple against a `ManufacturerProfile` and returns a `DrcReport` of structured `Violation`s.
 
-## Diagnostic Pipeline (`synth-diagnostics`)
+The same triple and profile produce a byte-identical report.
 
-DRC violations are categorized by severity (`Error`, `Warning`, `Info`) and emitted with exact spatial coordinates and net identifiers for easy debugging.
+## What it checks
+
+- Clearance, trace width, drill, annular ring, and via geometry.
+- Keepouts, board outline, and courtyard overlaps.
+- Solder mask, silkscreen, and DFM rules.
+- Signal integrity: required width, impedance, return-path windows.
+- Native `kicad-cli pcb drc` through `run_kicad_cli_drc`.
+
+## Key API
+
+| Item                                                                   | Meaning                   |
+| :--------------------------------------------------------------------- | :------------------------ |
+| `ManufacturerProfile`, `ProfileError`                                  | The fabrication contract. |
+| `DrcReport`, `Violation`, `DrcCounts`                                  | The result.               |
+| `NativeDrcOutcome`, `DRC_STAGE`                                        | Native-check evidence.    |
+| `run_kicad_cli_drc`                                                    | Run the native engine.    |
+| `required_width_nm`, `return_via_window_nm`, `RETURN_VIA_CLEARANCE_NM` | Signal-integrity helpers. |
+
+## Modules
+
+`dfm`, `kicad_cli`, `pcb_read`, `profile`, `rules`, `signal_integrity`.
+
+A missing profile or an unavailable native engine is `unknown`, never a pass.

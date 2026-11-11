@@ -1,0 +1,25 @@
+---
+title: synth-pcb Crate
+description: "The copper-geometry IR shared by routing, DRC, and KiCad export."
+---
+
+# `synth-pcb` Crate
+
+`synth-pcb` is the shape every copper-producing and copper-checking surface agrees on:
+
+- The exporter writes it into a `.kicad_pcb`.
+- `synth-drc` checks it.
+- `synth-route` produces it.
+- `synth-router` reads an external router's board back into it.
+
+## Types
+
+| Type          | Meaning                                                  |
+| :------------ | :------------------------------------------------------- |
+| `Routing`     | The routed board: segments, vias, layers, and metadata.  |
+| `Segment`     | One copper track: net, layer, width, start, end.         |
+| `Via`         | One plated hole: net, position, size, drill, layer span. |
+| `UnroutedNet` | A net the router could not complete, with its pads.      |
+| `PairReport`  | Differential-pair routing report.                        |
+
+The crate deliberately lives apart from any router implementation. The native maze router in `synth-route` is one _producer_; the external adapter in `synth-router` is another. DRC and export do not care which produced the copper.

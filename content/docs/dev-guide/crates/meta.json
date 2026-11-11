@@ -4,9 +4,24 @@
     "synth-ast",
     "synth-parser",
     "synth-ir",
+    "synth-diagnostics",
+    "synth-registry",
+    "synth-connectivity",
+    "synth-geometry",
+    "synth-validate",
+    "synth-layout",
     "synth-place",
+    "synth-pcb",
     "synth-route",
+    "synth-router",
     "synth-drc",
-    "synth-smt"
+    "synth-kicad",
+    "synth-render",
+    "synth-smt",
+    "synth-knowledge",
+    "synth-supply",
+    "synth-cost",
+    "synth-mcp",
+    "synth-cli"
   ]
 }

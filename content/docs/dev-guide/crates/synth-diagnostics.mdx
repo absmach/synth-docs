@@ -1,0 +1,27 @@
+---
+title: synth-diagnostics Crate
+description: "The stable, machine-readable diagnostic contract used by every compiler stage."
+---
+
+# `synth-diagnostics` Crate
+
+Every stage of the compiler reports through one type: `Diagnostic`. It carries a stable code, a severity, a title, expected and found text, a `Span`, and an optional `Patch` the CLI or an agent can apply.
+
+The wire format is versioned (`SCHEMA_VERSION`) and has a JSON Schema, emitted by `diagnostic_schema()`. That is why `synth validate --format json`, the MCP server, and the enterprise UI all agree on the shape.
+
+## Core types
+
+| Type                                                        | Meaning                                                                                |
+| :---------------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| `Diagnostic`                                                | One finding: code, severity, title, expected, found, location, suggested fix.          |
+| `Severity`                                                  | `Error`, `Warning`, `Info`. Severity is set per diagnostic, not by the `E`/`W` prefix. |
+| `Span`, `Location`, `ByteOffset`, `LineCol`                 | Source provenance.                                                                     |
+| `Patch`, `PatchKind`                                        | A machine-applicable edit: replace, insert, delete, or an SMT constraint patch.        |
+| `NativeCheckEvidence`, `NativeCheckStatus`, `UnknownReason` | The result of a native (KiCad) check. `unknown` is never promoted to `pass`.           |
+| `AgentHarness`                                              | A deterministic harness for replaying an agent's diagnostic/repair loop.               |
+
+## Why it exists
+
+The diagnostic contract is a product invariant, not an implementation detail. A rule may be added or removed, but the shape of a finding and its byte span must stay stable so tooling can consume it without a parser per rule.
+
+`synth fix` applies the highest-confidence `Patch` from each blocking diagnostic; `synth_apply_patch` applies structured patches directly. Both consume this crate.

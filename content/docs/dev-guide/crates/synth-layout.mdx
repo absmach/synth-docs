@@ -1,0 +1,27 @@
+---
+title: synth-layout Crate
+description: "Deterministic schematic placement and wire routing shared by the exporter, MCP tools, and preview."
+---
+
+# `synth-layout` Crate
+
+`synth-layout` computes schematic placement and wire routes. One layouter is shared by the KiCad exporter, the MCP tools, and the browser preview, so the views agree.
+
+## Output
+
+A `Layout` containing:
+
+- `ComponentPlacement` — position, rotation, and mirroring on the sheet.
+- `WirePath` — wire segments between pins.
+- `PowerFlag`, `PowerFlagKind` — power symbols and their orientation.
+- `NetLabel`, `LabelSpot`, `HierarchicalLabel` — net labels and their anchors.
+- `GroupBox`, `TextAnnotation`, `TextKind` — group boxes and notes.
+- `Rotation`, `SheetSize`, `PinSide` — sheet and symbol geometry.
+
+## Modules
+
+`maxrects` (rectangle packing), `placer`, `route`, `netclass`, `score`, `ops`, `footprint_resolve`, `kicad_footprint_loader`, `kicad_lib_loader`, `kicad_zip`, and `qualify_facts`.
+
+## Sidecar
+
+The optional `<design>.schematic.layout.toml` holds **sheet millimetres**. `schematic_sidecar_path` resolves the canonical filename. This is a different coordinate space from the PCB placement sidecar; passing one where the other is expected silently misplaces parts.

@@ -1,15 +1,37 @@
 ---
 title: synth-ast Crate
-description: Abstract Syntax Tree definitions and node schemas for Synth.
+description: "Typed Abstract Syntax Tree nodes for SynthSpec, with a source span on every node."
 ---
 
 # `synth-ast` Crate
 
-The `synth-ast` crate defines the strongly typed Abstract Syntax Tree (AST) data structures used throughout the parsing and analysis phases.
+`synth-ast` defines the typed tree the parser produces. It mirrors the source syntax; semantic passes do not edit it.
 
-## Core Types
+Every node carries a `synth_diagnostics::Span`, so a diagnostic raised anywhere downstream can point back to exact bytes.
 
-- `BoardNode`: Represents board dimensions, layer stackups, and global design parameters.
-- `ComponentNode`: Component instantiation nodes with values, footprints, and attributes.
-- `NetNode`: Logical electrical net connections linking component pins.
-- `Expression`: Numeric expressions with unit suffixes (`mm`, `mil`, `um`, `ohm`).
+## Shape
+
+- Enum nodes are `#[non_exhaustive]`, so adding a statement kind is a deliberate breaking change for exhaustive matches.
+- Structs are ordinary, so cross-crate constructors keep working and new fields can be added in minor releases.
+- The tree is produced by `synth-parser` and consumed by `synth-ir::lower`.
+
+## Key nodes
+
+| Node                                     | Represents                                                         |
+| :--------------------------------------- | :----------------------------------------------------------------- |
+| `BoardNode`                              | The `board { … }` block: layers, manufacturer, revision, stackup.  |
+| `ComponentNode`                          | One `component Ref: kind "part"` declaration and its attributes.   |
+| `ConnectNode`                            | A `connect A.pin -> B.pin as "NET" class "…"` statement.           |
+| `NetNode`                                | A `net "NAME" class "…" { … }` or `power "NAME" 3.3v { … }` block. |
+| `DiffPairNode`                           | A differential-pair declaration and its constraints.               |
+| `KeepoutNode`                            | A physical keepout region.                                         |
+| `PlacementHintNode`                      | `near`, `region`, `edge`, `side`, `rotation`, `priority`.          |
+| `ModuleNode`, `InterfaceNode`, `BusNode` | Reusable hierarchy and bus declarations.                           |
+
+## Where it sits
+
+```text
+synth-parser → synth-ast → synth-ir
+```
+
+If you are adding a language statement, start here and in `synth-parser`; do not add a special case in the IR that the AST cannot represent.

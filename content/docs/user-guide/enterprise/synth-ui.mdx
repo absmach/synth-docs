@@ -1,60 +1,318 @@
 ---
-title: SynthUI AI Cockpit
-description: Using the AI Copilot and interactive 3-panel CAD Cockpit in Synth Enterprise Edition.
-enterprise: true
+title: Workspace Tour
+description: "A guided tour of the Synth EE workspace: the PCB, schematic, and 3D views, the design rail, the inspector, the chat, and every review tool."
 ---
 
-# SynthUI AI Cockpit
+# Workspace Tour
 
-SynthUI is the browser-based **Explainability & Review Cockpit** included with Synth Enterprise Edition. It provides an AI-driven, interactive CAD environment where hardware engineers and AI copilots co-design circuit boards in real time.
+Every board in Synth EE opens in the same workspace. This page walks through it once, from the top bar to the footer, so you know where each action lives.
+
+![The board workspace](/screenshots/enterprise/05-workspace-pcb.png)
 
 ---
 
-## 3-Panel CAD Workspace
+## The Shape of the Workspace
 
-SynthUI organizes hardware co-design into a unified 3-panel workspace:
-
+```text
+┌──────────────────────────────────────────────────────────────────────────┐
+│ Board name · revision · status      Command · New board · Export        │
+├──────────────────────────────────────────────────────────────────────────┤
+│ PCB │ Schematic │ 3D │ open tools…                         Details ▾     │
+├────┬─────────────────────────────────────────────────┬───────────────────┤
+│    │                                                 │                   │
+│ R  │              Board canvas                       │   Design chat     │
+│ A  │        PCB / Schematic / 3D / tool panel        │   Ask · patch     │
+│ I  │                                                 │   · agent run     │
+│ L  │                                                 │                   │
+│    │                                                 │                   │
+├────┴─────────────────────────────────────────────────┴───────────────────┤
+│ phase · DRC status · size · layers · parts                               │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
-┌─────────────────────────────┬───────────────────────────────┬──────────────────────────────┐
-│  AI Copilot & Agent Panel   │    Interactive CAD Canvas     │  Source Inspector & DRC      │
-│  - Conversational Prompts   │  - Schematic / Graph / PCB    │  - Live .synth Code Editor   │
-│  - Multi-Model Selection    │  - Congestion Heatmap / 3D    │  - DRC Violation Inspector   │
-│  - AI Patch Proposals       │  - Live Component Steering    │  - BOM & Netlist Exporter    │
-└─────────────────────────────┴───────────────────────────────┴──────────────────────────────┘
-```
 
-### 1. Left Panel: Conversational AI Copilot & Agent Workflows
-- **Multi-Model Support**: Switch seamlessly between AI models (**Codex**, **Claude**, **Gemini**, **Mistral**) or local CLI models.
-- **Intent-Based Generation**: Describe what board or subcircuit you want (e.g. *"Create a dual 3.3V / 5V power supply board with USB-C input"*), and the Copilot streams its reasoning.
-- **Interactive Patch Cards**: Proposed design modifications appear as patch cards showing code diffs and placement changes. Click **Accept Patch** to validate with the compiler and merge into your design.
-- **Autonomous Agent Workflows**: Track agent plan timelines, code diffs, evidence logs, and approve repair proposals.
-
-### 2. Center Panel: 2D Vector CAD Canvas
-- **Multi-Mode Visualization**: Switch between **Schematic**, **System Graph**, **2D PCB Copper Layout**, **Congestion Heatmap**, and **3D Board** views.
-- **Interactive Steering**: Shift component positions (`dx`/`dy`), rotate footprints (`0°`, `90°`, `180°`, `270°`), and see airwires and pads recalculate instantly.
-- **Layer & Net Filtering**: Toggle top/bottom copper layers, view ratsnest connections, and highlight individual nets or differential pairs.
-
-### 3. Right Panel: Inspector & Diagnostics
-- **Live `.synth` Source Inspector**: View and edit the underlying SynthSpec source code with syntax highlighting and auto-validation.
-- **DRC Review**: Inspect physical design rule violations (e.g., trace clearance, pad overlaps). Click any DRC error to zoom directly to its location on the canvas.
-- **BOM Exporter**: View part numbers, MPNs, and LCSC IDs, and export bills of materials.
+- **Top bar** — identity and the three actions you use most.
+- **View tabs** — **PCB**, **Schematic**, **3D**, plus a tab for every tool you open from the rail.
+- **Design rail** — the tools. It is the fastest way to move around.
+- **Canvas** — the board or the selected tool.
+- **Design chat** — a conversation scoped to this board.
+- **Footer** — the board's physical summary and the current check state.
 
 ---
 
-## Designing & Synthesizing in SynthUI
+## The Top Bar
 
-Co-designing a board in SynthUI follows an interactive, human-in-the-loop workflow:
+| Control                   | What it does                                                                                                                |
+| :------------------------ | :-------------------------------------------------------------------------------------------------------------------------- |
+| **Board name**            | Takes you back to the workspace home.                                                                                       |
+| **Revision badge**        | `v3` for a saved revision, `saved` when the source matches the saved revision, `draft` when there are unsaved edits.        |
+| **Status pill**           | The current build state: **Queued**, **Placing**, **Routing**, **Checking DRC**, **Completed**, **Failed**, or **Blocked**. |
+| **Command** (⌘K / Ctrl-K) | Opens the command palette: jump to a tool, run a build, validate the source, route, export, or start a new board.           |
+| **New board**             | Opens the brief dialog.                                                                                                     |
+| **Export**                | Opens the manufacturing export dialog.                                                                                      |
 
-1. **Start a Design**: Click **New Design** to create a fresh workspace or open an existing design cockpit.
-2. **Co-Design with AI**: Enter a prompt or high-level requirements in the AI Copilot panel.
-3. **Review & Accept Patches**: Copilot returns structured patch proposals. Review the proposed `.synth` changes and click **Accept Patch** — Synth runs compiler validation automatically and updates the live inspector.
-4. **Trigger Physical Synthesis**: Click **Trigger Synthesis** to initiate placement (via DREAMPlace) and Pathfinder autorouting. Placement and copper trace convergence stream live onto the 2D CAD canvas.
-5. **Inspect & Tweak**: Manually adjust component placements or rotations on the canvas, inspect DRC markers, or prompt the Copilot to fix routing bottlenecks.
-6. **Export Manufacturing Artifacts**: Open the export menu to download native KiCad project files (`.kicad_pcb`, `.kicad_sch`), Gerbers, drill files, and BOM CSVs.
+The command palette is the fastest path for keyboard users. Type a tool name, or type `build` and press Enter.
 
 ---
 
-## Downloading Artifacts
+## The Design Rail
 
-From any active design cockpit, click **Export** to download the full production package — KiCad schematics and layouts, Gerbers, drill files, and the bill of materials as a `.zip` archive.
+The rail is always visible while a board is open. Each icon opens a tool as a tab.
 
+| Tool                    | Use it when you want to…                                                          |
+| :---------------------- | :-------------------------------------------------------------------------------- |
+| **Board**               | Return to the PCB view.                                                           |
+| **Synth source**        | Read or edit the `.synth` source, check it, save it, or build it.                 |
+| **Parts & BOM**         | Review every part, value, footprint, and supplier identity.                       |
+| **Connections**         | Review every net, its pins, and the open connections.                             |
+| **Architecture**        | Understand the design as functional groups, power rails, and signal nets.         |
+| **Checks**              | Read compiler ERC, physical DRC, routing, and release evidence.                   |
+| **Versions**            | Browse saved revisions and restore an earlier one.                                |
+| **Placement & routing** | Set an explicit outline and run the router.                                       |
+| **Sourcing**            | Look up a part by C-number or MPN and review the selected supplier.               |
+| **Cost**                | Calculate a build cost and freeze procurement.                                    |
+| **Delivery**            | Review manufacturing artifacts, attach an enclosure, and check release readiness. |
+| **Project settings**    | Change the project name, description, and board-level settings.                   |
+| **Generation activity** | Watch the live build log and stop a run.                                          |
+
+Open as many tools as you need. Each one gets a tab, and the URL records the open tool so a link or a reload returns to the same place.
+
+---
+
+## The PCB View
+
+![The PCB view with copper, silkscreen, pads, and airwires](/screenshots/enterprise/05-workspace-pcb.png)
+
+The PCB view is the default. The layer bar above the canvas controls what is drawn:
+
+| Control        | Shows                                                                          |
+| :------------- | :----------------------------------------------------------------------------- |
+| **All copper** | Every copper layer at once, with the front and back distinguished by colour.   |
+| **Front**      | The front copper layer.                                                        |
+| **Back**       | The back copper layer.                                                         |
+| **Silk**       | Silkscreen reference designators and outlines.                                 |
+| **Pads**       | Component pads, including through-hole and surface-mount pads.                 |
+| **Airwires**   | The connections that are not yet routed. A fully routed board has no airwires. |
+
+**Add part** opens the part picker. **Design preview** opens the board as a rendered preview rather than an editable canvas.
+
+Selecting a component opens the inspector with its reference designator, value, footprint, and the nets it touches. Use the inspector to ask the chat about that component or to nudge its placement.
+
+<Callout type="tip" title="The footer is a health check">
+
+The footer repeats the information that matters: the phase or error, the DRC status, the board size, the layer count, and the part count. If the footer says **DRC not attested**, the export gate is not satisfied even if the status pill says **Completed**.
+
+</Callout>
+
+---
+
+## The Schematic View
+
+![The generated schematic](/screenshots/enterprise/12-schematic.png)
+
+The schematic is generated from the source. It is a review view: you can select a component or a net and inspect it, but you do not draw wires here. To change the circuit, change the source.
+
+The schematic and PCB share the same selection. Select `U2` in the schematic and the PCB highlights the same part, and the inspector opens on it.
+
+---
+
+## The 3D View
+
+![The 3D board view](/screenshots/enterprise/13-3d.png)
+
+The 3D view renders the board with its components from the generated KiCad project. Use it to check:
+
+- Connector orientation and edge placement.
+- Tall parts that might collide with an enclosure.
+- Whether the board outline matches the mechanical design.
+
+The 3D view is a render, not a mechanical simulation. Attach a STEP enclosure from **Delivery** if you need to review a real mechanical fit.
+
+---
+
+## The Design Chat
+
+The chat panel on the right is scoped to the open board. It can answer questions about the design and, when a model provider is configured, propose source changes as patch cards.
+
+| Action                        | What it does                                                                          |
+| :---------------------------- | :------------------------------------------------------------------------------------ |
+| **Ask**                       | Answers a question about the board, a component, or a finding.                        |
+| **Review checks**             | Explains the current findings in plain language.                                      |
+| **Summarize**                 | Gives a short summary of the board's function and state.                              |
+| **Start a durable agent run** | Starts a longer design workflow on the server. It keeps running if you close the tab. |
+
+A proposed patch shows the source diff and the affected placement. **Accept** validates the patch and saves it as a new revision. **Reject** leaves the board unchanged.
+
+<Callout type="info" title="Chat needs a model provider">
+
+The chat and agent features need an OpenAI-compatible or OpenRouter model configured by your administrator. If the panel says the assistant is unavailable, the rest of the workspace — source, builds, checks, routing, export — still works without it.
+
+</Callout>
+
+---
+
+## The Source Tool
+
+![The source editor with the problems panel](/screenshots/enterprise/06-source.png)
+
+The source tool is a full editor for the `.synth` file.
+
+| Control          | What it does                                                               |
+| :--------------- | :------------------------------------------------------------------------- |
+| **Check source** | Runs the compiler and fills **Problems**. Fast; does not change the board. |
+| **Save draft**   | Saves the source as a new revision without building.                       |
+| **Build board**  | Saves the source and starts a new physical build.                          |
+| **Download**     | Downloads the source file.                                                 |
+
+The **Problems** panel groups diagnostics by severity and shows the line, the code, and the suggested fix. The source is the only design input; treat the editor as the real file.
+
+---
+
+## Parts & BOM
+
+![Parts and BOM](/screenshots/enterprise/09-parts-bom.png)
+
+Every placed part appears here with its reference designator, quantity, value, footprint, and type. Use the filter to find a part by reference, value, or footprint.
+
+The BOM export uses the same assignment. If a part has a supplier identity, it appears in the table; if it does not, the sourcing tools can help you choose one.
+
+---
+
+## Connections
+
+![Connections and open nets](/screenshots/enterprise/10-connections.png)
+
+The connections tool lists every net and the pins on it. The summary tells you whether any net is open.
+
+- **No open nets reported** means every declared connection has copper.
+- **Nets with missing connections** are listed with their pads and the reason the router could not connect them.
+
+Select a net to highlight it on the PCB and in the schematic.
+
+---
+
+## Architecture
+
+![Architecture view](/screenshots/enterprise/14-architecture.png)
+
+Architecture turns the source's `group` blocks into a block diagram. It is the fastest way to understand a board someone else wrote:
+
+- **Components** — the parts in each functional group.
+- **Power / ground nets** — the rails and their loads.
+- **Signal nets** — the connections between groups.
+
+Use it before a review: if a group is missing a decoupling capacitor or a power rail is not where you expect it, the diagram makes it obvious.
+
+---
+
+## Checks
+
+![Checks and diagnostics](/screenshots/enterprise/07-checks.png)
+
+The Checks tool is the board's evidence page. It is covered in detail in [Builds, Checks, and Recovery](/user-guide/enterprise/agent-worker). The four cards are:
+
+- **Compiler ERC** — source-level electrical checks.
+- **Physical DRC** — the native KiCad rule check on the delivered copper.
+- **Routing** — connectivity and router findings.
+- **Release** — whether the revision can be exported.
+
+---
+
+## Versions
+
+![Versions](/screenshots/enterprise/15-versions.png)
+
+Every save or build creates a revision. The list shows the content hash, who created it, the parent revision, and the status. **Restore** creates a new revision from an earlier source; it does not delete history.
+
+Use versions before a risky change. If the new build is worse, restore the previous revision and rebuild.
+
+---
+
+## Placement & Routing
+
+![Placement and routing](/screenshots/enterprise/08-routing.png)
+
+This tool does two things:
+
+1. **Physical outline** — set an explicit width and height, then **Apply size & rebuild**.
+2. **Placement & routing** — choose the router, passes, and threads, then **Run router & DRC**.
+
+The source remains authoritative. An explicit size is a constraint passed to the placer, not a change to the `.synth` file.
+
+---
+
+## Sourcing and Cost
+
+![Cost and sourcing](/screenshots/enterprise/16-cost.png)
+
+The cost tool builds a reproducible cost report from the board's parts, quantities, layer count, and dimensions. It can show a target budget and a supplier quote when your deployment has a quote provider configured.
+
+**Freeze procurement** records the exact part assignments for a manufacturing variant. Freeze before you request a quote, so the quote and the board refer to the same parts.
+
+The sourcing tool looks up a part by LCSC C-number or manufacturer part number and shows the selected supplier identity.
+
+---
+
+## Delivery and Manufacturing
+
+![Delivery and manufacturing](/screenshots/enterprise/17-delivery.png)
+
+The delivery tool collects the artifacts a fabricator or assembler needs:
+
+- The KiCad project and the routed board.
+- Gerber and drill files.
+- The BOM and pick-and-place file.
+- The evidence bundle for this revision.
+- An optional STEP enclosure, if you attach one.
+
+**Release readiness** is the verdict. A package is ready only when the revision, checks, and evidence agree. The tool never promotes an unknown check to a pass.
+
+---
+
+## Project Settings
+
+Project settings change the project's name and description and the board-level settings that the server owns. The `.synth` source still owns the electrical and physical declarations. If a setting changes the design, change it in the source and rebuild.
+
+---
+
+## Generation Activity
+
+**Generation activity** is the live run view. It shows:
+
+- The current step and status.
+- The compiler and router output.
+- The progress bar.
+- **Stop** for a running build.
+- **Check status** for the evidence page.
+
+If a build fails, this is the first place to look. The log usually names the exact stage and the reason.
+
+---
+
+## Keyboard and URL Shortcuts
+
+| Action                   | Shortcut                   |
+| :----------------------- | :------------------------- |
+| Command palette          | ⌘K / Ctrl-K                |
+| Open Synth source        | `S` in the command palette |
+| Open Parts & BOM         | `P`                        |
+| Open Connections         | `C`                        |
+| Open Architecture        | `A`                        |
+| Open Checks              | `K`                        |
+| Open Versions            | `V`                        |
+| Open Placement & routing | `R`                        |
+| Open Sourcing            | `G`                        |
+| Open Cost                | `M`                        |
+| Open Delivery            | `D`                        |
+| Open Project settings    | `O`                        |
+| Send a chat message      | Enter                      |
+| New line in chat         | Shift-Enter                |
+
+The view, open tool, and selection live in the URL. Copy the address bar to share exactly what you are looking at; reloading or using Back and Forward returns to the same state.
+
+---
+
+## What to Read Next
+
+- [Builds, Checks, and Recovery](/user-guide/enterprise/agent-worker) — every status and failure path.
+- [Teams and Access](/user-guide/enterprise/tenant-management) — invitations, roles, and audit.
+- [Qualification and Evidence](/user-guide/enterprise/qualification) — the release record.
