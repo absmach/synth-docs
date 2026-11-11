@@ -9,8 +9,6 @@ Synth EE is multi-tenant. A **workspace** (the UI also calls it an organization 
 
 Atom, the identity service, owns accounts and membership. Synth stores a project record, but it never stores a password or a role assignment. Every membership action is checked by Atom on the server; the browser never sends a role.
 
----
-
 ## Who Can Do What
 
 The workspace has two roles you assign directly, plus the roles Atom can grant.
@@ -30,8 +28,6 @@ The UI may hide a control you cannot use, but hiding is only a convenience. The 
 
 </Callout>
 
----
-
 ## Open the Members Page
 
 From the sidebar, select **Members**. The page lists the people in the active workspace and the invitations that have not been accepted.
@@ -39,8 +35,6 @@ From the sidebar, select **Members**. The page lists the people in the active wo
 ![Members and invitations](/screenshots/enterprise/18-members.png)
 
 Each member row shows the name, the identity, the role, and the status. Each invitation row shows the invitee, the role, the expiry, and the state: **pending**, **accepted**, **expired**, or **revoked**.
-
----
 
 ## Invite Someone
 
@@ -63,8 +57,6 @@ The invitation is created in Atom and an email is sent. The person appears under
 
 </Callout>
 
----
-
 ## The Last-Admin Rule
 
 A workspace must always have at least one admin or owner. Synth refuses to remove the last one.
@@ -81,8 +73,6 @@ To hand over control:
 
 An admin role held by a **group** also counts, so a workspace managed through an Atom group is not considered admin-less. If Atom cannot list the assignments, Synth refuses the removal rather than guessing.
 
----
-
 ## Invitations You Receive
 
 The **Invitations** page lists invitations addressed to you.
@@ -95,8 +85,6 @@ The **Invitations** page lists invitations addressed to you.
 
 An expired invitation cannot be accepted. Ask a workspace admin to send a new one.
 
----
-
 ## Switch Workspaces
 
 If you belong to more than one workspace, the workspace switcher in the sidebar changes the active one. Projects, members, billing, and audit are all scoped to the active workspace.
@@ -106,8 +94,6 @@ If you belong to more than one workspace, the workspace switcher in the sidebar 
 Project visibility is workspace-wide. If two teams must not see each other's boards, put them in separate workspaces rather than relying on project-level permissions. Project-level isolation is not currently supported.
 
 </Callout>
-
----
 
 ## Single Sign-On
 
@@ -122,8 +108,6 @@ Common identity providers:
 - Any SAML 2.0 or OIDC provider supported by your Atom deployment
 
 SSO is configured by the deployment administrator, not from the workspace UI. Once it is enabled, password sign-in can be disabled for the organization. Ask your administrator for the provider-specific setup.
-
----
 
 ## The Audit Trail
 
@@ -142,8 +126,6 @@ The audit log records:
 Each entry records the actor, the action, the target, the outcome, and a correlation identifier. It is append-only: there is no update or delete API, and the database rejects updates and deletes.
 
 If you are not a workspace admin, the page tells you that the audit log is limited to workspace admins. Ask an admin if you need a record of activity.
-
----
 
 ## What to Read Next
 

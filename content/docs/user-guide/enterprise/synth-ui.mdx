@@ -9,8 +9,6 @@ Every board in Synth EE opens in the same workspace. This page walks through it 
 
 ![The board workspace](/screenshots/enterprise/05-workspace-pcb.png)
 
----
-
 ## The Shape of the Workspace
 
 ```text
@@ -37,8 +35,6 @@ Every board in Synth EE opens in the same workspace. This page walks through it 
 - **Design chat** — a conversation scoped to this board.
 - **Footer** — the board's physical summary and the current check state.
 
----
-
 ## The Top Bar
 
 | Control                   | What it does                                                                                                                |
@@ -51,8 +47,6 @@ Every board in Synth EE opens in the same workspace. This page walks through it 
 | **Export**                | Opens the manufacturing export dialog.                                                                                      |
 
 The command palette is the fastest path for keyboard users. Type a tool name, or type `build` and press Enter.
-
----
 
 ## The Design Rail
 
@@ -75,8 +69,6 @@ The rail is always visible while a board is open. Each icon opens a tool as a ta
 | **Generation activity** | Watch the live build log and stop a run.                                          |
 
 Open as many tools as you need. Each one gets a tab, and the URL records the open tool so a link or a reload returns to the same place.
-
----
 
 ## The PCB View
 
@@ -103,8 +95,6 @@ The footer repeats the information that matters: the phase or error, the DRC sta
 
 </Callout>
 
----
-
 ## The Schematic View
 
 ![The generated schematic](/screenshots/enterprise/12-schematic.png)
@@ -112,8 +102,6 @@ The footer repeats the information that matters: the phase or error, the DRC sta
 The schematic is generated from the source. It is a review view: you can select a component or a net and inspect it, but you do not draw wires here. To change the circuit, change the source.
 
 The schematic and PCB share the same selection. Select `U2` in the schematic and the PCB highlights the same part, and the inspector opens on it.
-
----
 
 ## The 3D View
 
@@ -126,8 +114,6 @@ The 3D view renders the board with its components from the generated KiCad proje
 - Whether the board outline matches the mechanical design.
 
 The 3D view is a render, not a mechanical simulation. Attach a STEP enclosure from **Delivery** if you need to review a real mechanical fit.
-
----
 
 ## The Design Chat
 
@@ -148,8 +134,6 @@ The chat and agent features need an OpenAI-compatible or OpenRouter model config
 
 </Callout>
 
----
-
 ## The Source Tool
 
 ![The source editor with the problems panel](/screenshots/enterprise/06-source.png)
@@ -165,8 +149,6 @@ The source tool is a full editor for the `.synth` file.
 
 The **Problems** panel groups diagnostics by severity and shows the line, the code, and the suggested fix. The source is the only design input; treat the editor as the real file.
 
----
-
 ## Parts & BOM
 
 ![Parts and BOM](/screenshots/enterprise/09-parts-bom.png)
@@ -174,8 +156,6 @@ The **Problems** panel groups diagnostics by severity and shows the line, the co
 Every placed part appears here with its reference designator, quantity, value, footprint, and type. Use the filter to find a part by reference, value, or footprint.
 
 The BOM export uses the same assignment. If a part has a supplier identity, it appears in the table; if it does not, the sourcing tools can help you choose one.
-
----
 
 ## Connections
 
@@ -187,8 +167,6 @@ The connections tool lists every net and the pins on it. The summary tells you w
 - **Nets with missing connections** are listed with their pads and the reason the router could not connect them.
 
 Select a net to highlight it on the PCB and in the schematic.
-
----
 
 ## Architecture
 
@@ -202,8 +180,6 @@ Architecture turns the source's `group` blocks into a block diagram. It is the f
 
 Use it before a review: if a group is missing a decoupling capacitor or a power rail is not where you expect it, the diagram makes it obvious.
 
----
-
 ## Checks
 
 ![Checks and diagnostics](/screenshots/enterprise/07-checks.png)
@@ -215,8 +191,6 @@ The Checks tool is the board's evidence page. It is covered in detail in [Builds
 - **Routing** — connectivity and router findings.
 - **Release** — whether the revision can be exported.
 
----
-
 ## Versions
 
 ![Versions](/screenshots/enterprise/15-versions.png)
@@ -224,8 +198,6 @@ The Checks tool is the board's evidence page. It is covered in detail in [Builds
 Every save or build creates a revision. The list shows the content hash, who created it, the parent revision, and the status. **Restore** creates a new revision from an earlier source; it does not delete history.
 
 Use versions before a risky change. If the new build is worse, restore the previous revision and rebuild.
-
----
 
 ## Placement & Routing
 
@@ -238,8 +210,6 @@ This tool does two things:
 
 The source remains authoritative. An explicit size is a constraint passed to the placer, not a change to the `.synth` file.
 
----
-
 ## Sourcing and Cost
 
 ![Cost and sourcing](/screenshots/enterprise/16-cost.png)
@@ -249,8 +219,6 @@ The cost tool builds a reproducible cost report from the board's parts, quantiti
 **Freeze procurement** records the exact part assignments for a manufacturing variant. Freeze before you request a quote, so the quote and the board refer to the same parts.
 
 The sourcing tool looks up a part by LCSC C-number or manufacturer part number and shows the selected supplier identity.
-
----
 
 ## Delivery and Manufacturing
 
@@ -266,13 +234,9 @@ The delivery tool collects the artifacts a fabricator or assembler needs:
 
 **Release readiness** is the verdict. A package is ready only when the revision, checks, and evidence agree. The tool never promotes an unknown check to a pass.
 
----
-
 ## Project Settings
 
 Project settings change the project's name and description and the board-level settings that the server owns. The `.synth` source still owns the electrical and physical declarations. If a setting changes the design, change it in the source and rebuild.
-
----
 
 ## Generation Activity
 
@@ -285,8 +249,6 @@ Project settings change the project's name and description and the board-level s
 - **Check status** for the evidence page.
 
 If a build fails, this is the first place to look. The log usually names the exact stage and the reason.
-
----
 
 ## Keyboard and URL Shortcuts
 
@@ -308,8 +270,6 @@ If a build fails, this is the first place to look. The log usually names the exa
 | New line in chat         | Shift-Enter                |
 
 The view, open tool, and selection live in the URL. Copy the address bar to share exactly what you are looking at; reloading or using Back and Forward returns to the same state.
-
----
 
 ## What to Read Next
 

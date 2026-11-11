@@ -7,15 +7,11 @@ description: What synth export-kicad produces, how to work with the output, and 
 
 `synth export-kicad` generates a native KiCad 8 project directory from a `.synth` design file. The exported files open directly in KiCad without any conversion step.
 
----
-
 ## Required KiCad Version
 
 Synth targets **KiCad v8.0 and later**. Files use the KiCad 8 S-expression format. Older KiCad versions may fail to open the generated files.
 
 Download KiCad from [kicad.org/download](https://www.kicad.org/download/).
-
----
 
 ## What Gets Exported
 
@@ -48,8 +44,6 @@ synth export-kicad board.synth --out output/board --gerbers --drill --step
 
 These require `kicad-cli` to be installed and on your `PATH`. Get it with [KiCad](https://www.kicad.org/download/).
 
----
-
 ## Opening the Project
 
 Open the project file to load everything at once:
@@ -67,8 +61,6 @@ kicad output/board/board.kicad_sch
 # PCB layout only
 kicad output/board/board.kicad_pcb
 ```
-
----
 
 ## The Ownership Rule
 
@@ -93,8 +85,6 @@ Do not mix the two. Passing one where the other is expected silently misplaces p
 
 </Callout>
 
----
-
 ## Validation Gates
 
 Synth's validation runs before export. Add `--validate-erc` to also run KiCad's own ERC check on the exported schematic:
@@ -110,8 +100,6 @@ The recommended gate order before shipping any design:
 3. `kicad-cli sch erc board.kicad_sch` — zero errors, zero warnings
 4. `kicad-cli pcb drc board.kicad_pcb --schematic-parity` — clean
 
----
-
 ## BOM and Part Numbers
 
 The `bom.csv` file is generated from the component registry. Each component carries:
@@ -122,8 +110,6 @@ The `bom.csv` file is generated from the component registry. Each component carr
 KiCad's BOM tools and the JLCPCB plugin ecosystem read the `MPN` and `LCSC` fields directly from the schematic's hidden instance fields — Synth stamps these onto every component at export time.
 
 Do not edit `bom.csv` directly. If a part number is wrong, fix it in the registry and re-export.
-
----
 
 ## Known Limitations
 

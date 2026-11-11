@@ -39,8 +39,6 @@ flowchart TD
     IR --> CLI["synth-cli<br/>the synth binary"]
 ```
 
----
-
 ## Compilation Stages
 
 ### 1. Lexing and parsing — `synth-parser`
@@ -142,8 +140,6 @@ Deterministic SVG rasterization and pixel diffing. `svg_to_png` turns a rendered
 
 `synth-mcp` exposes the same stages as MCP tools over stdio or HTTP/SSE. It owns the tool catalogue, the server instructions, and an audit log for tool calls.
 
----
-
 ## Crate Map
 
 | Crate                | Stage     | Responsibility                                                                     |
@@ -170,8 +166,6 @@ Deterministic SVG rasterization and pixel diffing. `svg_to_png` turns a rendered
 | `synth-cost`         | Supply    | Pure, reproducible manufacturing cost reports.                                     |
 | `synth-mcp`          | Surface   | MCP server over stdio and HTTP/SSE.                                                |
 | `synth-cli`          | Surface   | The `synth` command-line binary.                                                   |
-
----
 
 ## Contributing
 

@@ -15,8 +15,6 @@ Tenant administrators cannot use the system console.
 
 </Callout>
 
----
-
 ## The Admin Console
 
 Open `/admin` in the workspace. The console is gated on the Atom identity: the server checks that the caller has the system-administrator role, and the browser never sends a role of its own.
@@ -84,8 +82,6 @@ The console surfaces the shared audit trail. It is append-only and records ident
 
 You can filter by tenant, action, actor, date range, and free-text search, with pagination.
 
----
-
 ## Workspace Billing
 
 Workspace members open **Usage & billing** from the sidebar.
@@ -107,8 +103,6 @@ If the page says **Billing service unavailable**, the plan and usage cannot be v
 
 </Callout>
 
----
-
 ## Quotas and Trial Limits
 
 A deployment can enforce quotas on resource-intensive operations:
@@ -120,8 +114,6 @@ A deployment can enforce quotas on resource-intensive operations:
 
 The local Compose stack disables quota enforcement by default. Production uses AMDM as the source of plan limits and applies the configured free-trial expiry guard. If an operation is refused, the message names the limit and the plan; it is not a build failure.
 
----
-
 ## Security Notes for Administrators
 
 - The Atom service token is server-side only. It never reaches the browser.
@@ -129,8 +121,6 @@ The local Compose stack disables quota enforcement by default. Production uses A
 - Correlation identifiers are safe to share in a support request; they contain no session, user, or secret data.
 - Feature flags can change the UI for a tenant. Record why you changed one.
 - A support session is time-limited and audited. End it when the task is done.
-
----
 
 ## What to Read Next
 

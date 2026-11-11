@@ -13,8 +13,6 @@ A board is not finished when the copper looks right. A release needs a record th
 
 Synth EE stores that record with every release. This page explains what it contains and how to reproduce it outside the browser.
 
----
-
 ## What a Release Carries
 
 ![Delivery and release readiness](/screenshots/enterprise/17-delivery.png)
@@ -32,8 +30,6 @@ Synth EE stores that record with every release. This page explains what it conta
 | **Audit entries**                    | The append-only trail of every action that led to the release.       |
 
 When the deployment is configured for it, the bundle also carries a cryptographic attestation over the artifact hashes. The presence of an attestation is shown in the release record; an unattested bundle is never presented as attested.
-
----
 
 ## Release Readiness
 
@@ -60,8 +56,6 @@ If a validator times out, a renderer is unavailable, or a physical check cannot 
 
 </Callout>
 
----
-
 ## Downloading the Evidence
 
 From a board whose release is ready:
@@ -74,8 +68,6 @@ From a board whose release is ready:
 The archive contains the manufacturing files and the evidence record for that revision. Keep the archive with the release; it is the artifact a reviewer or auditor needs.
 
 If the **Manufacturing package** row is disabled, the release is not ready. Open **Checks → Release**; the card names the blocker. A completed build with unattested DRC, an incomplete package, or an unfrozen procurement is not release-ready.
-
----
 
 ## Reproducing the Check Outside the Browser
 
@@ -104,8 +96,6 @@ The open-source repository ships Class A and Class B qualification boards with t
 
 </Callout>
 
----
-
 ## The Qualification Board Walkthrough
 
 The [first-board walkthrough](/user-guide/enterprise/getting-started) imports `qualification/class-a/i2c-sensor-node/i2c_sensor_node.synth`. That board is useful for a first session because it exercises the complete path:
@@ -116,8 +106,6 @@ The [first-board walkthrough](/user-guide/enterprise/getting-started) imports `q
 - A review record with measured DRC and ERC results.
 
 If your deployment's result differs from the record in the qualification README, compare the source hash, the rule profile, and the renderer version before assuming a design problem.
-
----
 
 ## Auditor Access
 
@@ -130,8 +118,6 @@ The **Auditor** role is for quality engineers, certifying authorities, and exter
 
 An auditor cannot edit a design, trigger a build, or approve a release. The role is assigned by a workspace admin or a system administrator, depending on the deployment's Atom policy.
 
----
-
 ## Approval Policy
 
 A deployment can require an explicit approval before a release becomes exportable. When that policy is on:
@@ -142,8 +128,6 @@ A deployment can require an explicit approval before a release becomes exportabl
 4. The approval is written to the audit trail with the actor, time, and revision.
 
 The policy is configured by the deployment administrator. The default local stack does not require an approval; production should decide explicitly.
-
----
 
 ## What to Read Next
 

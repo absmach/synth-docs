@@ -7,8 +7,6 @@ description: "How Synth EE queues builds, what every status means, how evidence 
 
 A build is more than “press a button and wait.” Synth EE runs the compiler, places the parts, routes the copper, checks the result, and records the evidence. This page explains what happens at each stage and what to do when a stage goes wrong.
 
----
-
 ## The Build Pipeline
 
 ```mermaid
@@ -23,8 +21,6 @@ flowchart LR
 ```
 
 Each stage is recorded against the revision. If the source changes after a check, the evidence is marked **stale** rather than silently reused.
-
----
 
 ## Build States
 
@@ -45,8 +41,6 @@ A build can complete with findings. **Release** is the separate verdict that com
 
 </Callout>
 
----
-
 ## Status Words in the Interface
 
 The workspace uses a small, consistent vocabulary. The colour tells you how to act.
@@ -66,8 +60,6 @@ Two distinctions matter most:
 - **Estimate vs. quote.** An estimate is unresolved until a supplier quote backs it.
 - **Blocked vs. unavailable.** Blocked is about the board or a policy. Unavailable is about infrastructure. They never share a colour.
 
----
-
 ## Background Builds and Workers
 
 Builds run in the background. The browser subscribes to progress updates; closing the tab does not stop the job.
@@ -78,8 +70,6 @@ Builds run in the background. The browser subscribes to progress updates; closin
 - **Temporal carries durable agent workflows.** If Temporal is down, manual builds can still work; long agent runs cannot.
 
 If a build stays **Queued**, the worker pool is the first thing to check. If **Physical DRC** stays **Not attested**, check the renderer and the validation endpoint. These are infrastructure failures, and the UI reports them as **Unavailable**, not as a design failure.
-
----
 
 ## Reading a Finding
 
@@ -97,8 +87,6 @@ Every finding has the same shape:
 
 Errors are not necessarily bugs in Synth. A placement error usually means the outline is too small for the parts. A routing error means the router could not produce copper the independent check accepts. Read the expected/found pair before changing the source.
 
----
-
 ## Evidence and Staleness
 
 The Checks page is an evidence page, not a dashboard. Each card records the revision it checked.
@@ -113,8 +101,6 @@ The Checks page is an evidence page, not a dashboard. Each card records the revi
 A timeout, a missing renderer, or an unavailable validator produces **unknown** or **not attested**, never a pass. This is deliberate: a release decision must fail closed.
 
 </Callout>
-
----
 
 ## Recovery Playbook
 
@@ -167,8 +153,6 @@ Open **Checks** and read the **Release** card. The usual causes are:
 
 Resolve the cause, then export again.
 
----
-
 ## Build Logs
 
 Every build keeps a structured log. **Generation activity** shows the last lines; the full log is available from the same panel. The log records the stage, the router, the pass count, and the reason for any fallback.
@@ -181,8 +165,6 @@ When you report a problem, include:
 4. The last lines of the build log.
 
 That is enough for an administrator to find the same request in the server logs.
-
----
 
 ## What to Read Next
 

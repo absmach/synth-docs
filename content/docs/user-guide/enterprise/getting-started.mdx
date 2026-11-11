@@ -15,8 +15,6 @@ You can skip Step 1. The rest of the page assumes you are looking at your worksp
 
 </Callout>
 
----
-
 ## What You Will Do
 
 ```mermaid
@@ -29,8 +27,6 @@ flowchart LR
     F --> G["Route and review"]
     G --> H["Export"]
 ```
-
----
 
 ## Step 1: Sign In
 
@@ -52,8 +48,6 @@ Check the address you used in the invitation. Synth accounts are scoped to the w
 
 After a successful sign-in you land on the workspace home screen.
 
----
-
 ## Step 2: Meet the Home Screen
 
 ![Synth workspace home](/screenshots/enterprise/02-home.png)
@@ -71,8 +65,6 @@ The left sidebar is the workspace: **Home**, **Projects**, your recent boards, *
 The RP2350 USB-C edge logger is a packaged demo. Open it to see a fully populated workspace without waiting for a build. Your own boards appear under **Projects** after you create them.
 
 </Callout>
-
----
 
 ## Step 3: Import the Qualification Board
 
@@ -93,8 +85,6 @@ The import takes the single `.synth` source file. Synth places the board from th
 </Callout>
 
 You are taken straight to the new board's workspace. The header shows the board name, the revision badge, and a status pill.
-
----
 
 ## Step 4: Watch the Build
 
@@ -118,8 +108,6 @@ Open **Generation activity** at the bottom of the workspace (or in the left tool
 **Completed** means the build finished. It does not mean the design is ready to manufacture. Release readiness is a separate verdict that also requires the checks to be current and any blocking findings to be resolved. See [Builds, Checks, and Recovery](/user-guide/enterprise/agent-worker).
 
 </Callout>
-
----
 
 ## Step 5: Look at the Board
 
@@ -148,8 +136,6 @@ Try these three things before moving on:
 2. Toggle **Front**, **Back**, and **Silk** to see the copper and silkscreen layers.
 3. Switch to **Schematic** and **3D** to confirm the generated views match the board.
 
----
-
 ## Step 6: Read the Source and Validate It
 
 Open **Synth source** in the design rail.
@@ -171,8 +157,6 @@ If you need to change a value, a connection, or a placement hint, change it here
 </Callout>
 
 For this imported board, choose **Check source**. The expected result is a clean compile with warnings only — for example, a thermal estimate for the regulator. Warnings do not block the release; errors do.
-
----
 
 ## Step 7: Review the Checks
 
@@ -208,8 +192,6 @@ On a clean build, the sequence is:
 
 If a card is **Failed**, **Blocked**, or still **Not attested**, read the finding before changing anything. A **Completed** build with an unattested check is not release-ready: the Release card stays blocked until the evidence exists. The most common causes are a placement that cannot fit the outline and a router that returned geometry the independent check rejected.
 
----
-
 ## Step 8: Route and Review the Copper
 
 Open **Placement & routing** in the design rail.
@@ -231,8 +213,6 @@ If you do not have a mechanical constraint, leave the outline alone and rebuild.
 
 If the build already routed the board, you do not need to run the router again. Use **Run router & DRC** when you want a fresh attempt, a different router, or a different number of passes.
 
----
-
 ## Step 9: Inspect the Manufacturing Data
 
 Use the rail to open the remaining review tools. Each one is covered in detail in the [Workspace Tour](/user-guide/enterprise/synth-ui); for the first session, check these four:
@@ -245,8 +225,6 @@ Use the rail to open the remaining review tools. Each one is covered in detail i
 ![Parts and BOM](/screenshots/enterprise/09-parts-bom.png)
 
 ![Connections and open nets](/screenshots/enterprise/10-connections.png)
-
----
 
 ## Step 10: Export the Board
 
@@ -273,8 +251,6 @@ Synth will not hand you a manufacturing package for a revision with unresolved b
 
 </Callout>
 
----
-
 ## What “Done” Looks Like
 
 You have finished the first session when all of these are true:
@@ -286,8 +262,6 @@ You have finished the first session when all of these are true:
 - **Export** produces a package you can open in KiCad.
 
 That is the loop: **edit the source → build → read the checks → fix → export**. Everything else in Synth EE supports one of those steps.
-
----
 
 ## If Something Goes Wrong
 
