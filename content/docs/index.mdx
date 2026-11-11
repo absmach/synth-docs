@@ -43,14 +43,14 @@ flowchart TD
 
 ## What Synth Does
 
-| Area | Capabilities |
-| :--- | :--- |
-| **AI-Assisted PCB Design** | Co-design with AI via conversational prompts, agentic workflows, interactive patch proposals, and MCP tool integration |
-| **Design Language (SynthSpec)** | Expressive syntax for components, nets, differential pairs, keepout zones, and placement hints |
-| **Validation & DRC** | Real-time electrical-rule checks (ERC), design-rule checks (DRC), structured JSON diagnostics, and auto-fixes |
-| **Physical Synthesis** | GPU/CPU-accelerated DREAMPlace placement and Pathfinder autorouting with live convergence streaming |
-| **KiCad & CAD Export** | Native KiCad schematic (`.kicad_sch`), PCB layout (`.kicad_pcb`), BOM CSV, and Gerber/drill exports |
-| **Component Registry** | Integrated parts database with parametric search, LCSC part import, and custom part authoring |
+| Area                            | Capabilities                                                                                                           |
+| :------------------------------ | :--------------------------------------------------------------------------------------------------------------------- |
+| **AI-Assisted PCB Design**      | Co-design with AI via conversational prompts, agentic workflows, interactive patch proposals, and MCP tool integration |
+| **Design Language (SynthSpec)** | Expressive syntax for components, nets, differential pairs, keepout zones, and placement hints                         |
+| **Validation & DRC**            | Real-time electrical-rule checks (ERC), design-rule checks (DRC), structured JSON diagnostics, and auto-fixes          |
+| **Physical Synthesis**          | GPU/CPU-accelerated DREAMPlace placement and Pathfinder autorouting with live convergence streaming                    |
+| **KiCad & CAD Export**          | Native KiCad schematic (`.kicad_sch`), PCB layout (`.kicad_pcb`), BOM CSV, and Gerber/drill exports                    |
+| **Component Registry**          | Integrated parts database with parametric search, LCSC part import, and custom part authoring                          |
 
 ---
 
@@ -58,28 +58,42 @@ flowchart TD
 
 Synth is available in two editions:
 
-| Capability | Community (Open Source) | Enterprise (Synth EE) |
-| :--- | :---: | :---: |
-| SynthSpec compiler & validation | ✅ | ✅ |
-| AI Agent CLI & MCP server | ✅ | ✅ |
-| KiCad, Gerber & BOM export | ✅ | ✅ |
-| Component registry & LCSC import | ✅ | ✅ |
-| Local live browser preview | ✅ | ✅ |
-| AI Cockpit & Interactive CAD Canvas (SynthUI) | ❌ | ✅ |
-| Multi-Model AI Copilot (Codex, Claude, Gemini) | ❌ | ✅ |
-| Cloud placement & autorouting engine | ❌ | ✅ |
-| Multi-tenant teams & SSO access control | ❌ | ✅ |
-| Qualification & compliance audit trails | ❌ | ✅ |
+| Capability                                     | Community (Open Source) | Enterprise (Synth EE) |
+| :--------------------------------------------- | :---------------------: | :-------------------: |
+| SynthSpec compiler & validation                |           ✅            |          ✅           |
+| AI Agent CLI & MCP server                      |           ✅            |          ✅           |
+| KiCad, Gerber & BOM export                     |           ✅            |          ✅           |
+| Component registry & LCSC import               |           ✅            |          ✅           |
+| Schematic & 3D board rendering                 |           ✅            |          ✅           |
+| AI Cockpit & Interactive CAD Canvas (SynthUI)  |           ❌            |          ✅           |
+| Multi-Model AI Copilot (Codex, Claude, Gemini) |           ❌            |          ✅           |
+| Cloud placement & autorouting engine           |           ❌            |          ✅           |
+| Multi-tenant teams & SSO access control        |           ❌            |          ✅           |
+| Qualification & compliance audit trails        |           ❌            |          ✅           |
 
-> [!NOTE]
-> Synth EE is closed source. The core Synth compiler, CLI, and MCP server are open source and free to use under the Apache 2.0 license.
+<Callout type="info">
+
+Synth EE is closed source. The core Synth compiler, CLI, and MCP server are open source and free to use under the Apache 2.0 license.
+
+</Callout>
 
 ---
 
 ## Get Started
 
-- [Quick Start Guide](/user-guide/quick-start) — Build your first board in minutes.
-- [AI Copilot & MCP Server](/user-guide/mcp-server) — Connect AI assistants to design boards interactively.
-- [SynthSpec Reference](/user-guide/dsl-reference) — Learn the design language.
-- [CLI Reference](/user-guide/cli) — All `synth` subcommands and flags.
+| #   | Page                                        | What you get                                                                                 |
+| :-- | :------------------------------------------ | :------------------------------------------------------------------------------------------- |
+| 1   | [Core Concepts](/user-guide/concepts)       | The vocabulary and the one rule that matters: what you own vs. what Synth generates. _5 min_ |
+| 2   | [Installation](/user-guide/installation)    | Synth on your machine, paired with a matching parts registry. _10 min_                       |
+| 3   | [Quick Start](/user-guide/quick-start)      | Validate and export an existing example, to confirm everything works. _10 min_               |
+| 4   | [Your First Board](/user-guide/first-board) | Write a USB-C power supply from an empty file, and learn to read diagnostics. _15 min_       |
 
+### Reference
+
+| Page                                                    | Use it for                                        |
+| :------------------------------------------------------ | :------------------------------------------------ |
+| [SynthSpec Reference](/user-guide/dsl-reference)        | Every statement in the design language            |
+| [CLI Reference](/user-guide/cli)                        | Every `synth` subcommand and flag                 |
+| [KiCad Export](/user-guide/kicad-export)                | What gets generated, and the fabrication workflow |
+| [Component Registry](/user-guide/registry-and-fixtures) | Finding, importing, and authoring parts           |
+| [MCP Server](/user-guide/mcp-server)                    | Designing with an AI assistant                    |
