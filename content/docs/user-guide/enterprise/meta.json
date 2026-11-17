@@ -7,6 +7,7 @@
     "agent-worker",
     "tenant-management",
     "qualification",
+    "artifact-qualification",
     "admin-and-billing"
   ]
 }
