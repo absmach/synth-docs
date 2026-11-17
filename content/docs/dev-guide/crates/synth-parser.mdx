@@ -1,17 +1,28 @@
 ---
 title: synth-parser Crate
-description: Lexer and parser pipeline for Synth hardware specifications.
+description: "Span-accurate lexer and recursive-descent parser for SynthSpec."
 ---
 
 # `synth-parser` Crate
 
-The `synth-parser` crate implements lexing and parsing of `.synth` source files into `synth-ast` data structures using zero-copy tokenization.
+`synth-parser` turns UTF-8 `.synth` source into `synth_ast::DesignFile` and diagnostics.
 
-## Key APIs
+## Two stages
+
+- **`token`** — a hand-rolled lexer. It produces `Token`s with byte-accurate spans, including string escapes, line and block comments, and engineering unit suffixes such as `20mm`, `90ohm`, and `3.3v`.
+- **`parser`** — a recursive-descent parser over the token stream. It recovers from syntax errors and continues, so one run can report several problems instead of stopping at the first.
+
+## Public API
 
 ```rust
-use synth_parser::parse_source;
+use synth_parser::{lex, parse, parse_tokens};
 
-let source = std::fs::read_to_string("board.synth")?;
-let ast = parse_source(&source)?;
+let tokens = lex(source)?;
+let result = parse_tokens(tokens, "board.synth".into());
 ```
+
+`parse` is the convenience entry point. `json::parse_json` produces a JSON view of the tree for tooling.
+
+## What it does not do
+
+The parser does not resolve parts, check electrical rules, or lay anything out. It only builds the tree. A syntax error is reported with a byte span and a diagnostic code; the compiler's recovery is what lets `synth validate` list more than one parse error at a time.

@@ -13,7 +13,13 @@ interface CompileFile {
 // Authors keep writing plain markdown image syntax; this rewrites image URLs at
 // compile time into the canonical same-origin Worker path.
 const CONTENT_ROOT = join(process.cwd(), "content/docs");
-const IMAGE_BASE_PATH = "/docs/synth";
+
+// In production the site is served under /docs/synth, so images go through
+// the Worker/R2 route. During local dev the site is at the root and the images
+// are served from public/screenshots. Both editions share the same image path.
+const IS_DEV = process.env.NODE_ENV === "development";
+const IMAGE_BASE_PATH =
+  process.env.NEXT_PUBLIC_BASE_PATH ?? (IS_DEV ? "" : "/docs/synth");
 
 function walk(node: MdastNode, visitor: (node: MdastNode) => void) {
   if (node.type === "image") visitor(node);
@@ -27,7 +33,7 @@ export function remarkDocImages() {
     walk(tree, (node) => {
       if (typeof node.url !== "string" || node.url.length === 0) return;
       if (/^https?:\/\//.test(node.url)) return;
-      if (node.url.startsWith(IMAGE_BASE_PATH)) return;
+      if (IMAGE_BASE_PATH && node.url.startsWith(IMAGE_BASE_PATH)) return;
 
       if (node.url.startsWith("/")) {
         node.url = `${IMAGE_BASE_PATH}${node.url}`;

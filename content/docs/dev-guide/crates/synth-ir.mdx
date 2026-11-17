@@ -1,14 +1,32 @@
 ---
 title: synth-ir Crate
-description: Intermediate Representation and lowering transformations in Synth.
+description: "Canonical Board IR, indexed IDs, and the lowering pass every downstream stage consumes."
 ---
 
 # `synth-ir` Crate
 
-The `synth-ir` crate provides the canonical Intermediate Representation (IR) format. IR lowers AST statements into explicit geometry specs, pad coordinates, net connection graphs, and DRC rule constraints.
+`synth-ir` is the shared semantic model. It lowers `synth_ast::DesignFile` plus resolved registry parts into a `Board`: indexed components, pins, nets, power domains, clusters, diff pairs, and board parameters.
 
-## Structures
+Everything downstream — ERC, placement, routing, DRC, KiCad export, the MCP tools — consumes `Board` and the indexed IDs (`ComponentId`, `PinId`, `NetId`), not the AST.
 
-- `DesignIR`: Top-level serializable container.
-- `ComponentIR`: Resolved footprint, orientation, layer, and pin locations.
-- `NetIR`: Flattened list of pin pairs requiring copper track connectivity.
+## Modules
+
+| Module               | Responsibility                                                |
+| :------------------- | :------------------------------------------------------------ |
+| `board`              | The `Board`, component/pin/net indexes, and board parameters. |
+| `lower`              | AST + registry parts → `Board`.                               |
+| `clusters`           | Functional grouping used by placement and review.             |
+| `diff_pairs`         | Differential-pair legs and constraints.                       |
+| `power_domains`      | Rail topology and ground classification.                      |
+| `modules`, `imports` | Reusable hierarchy and imported designs.                      |
+| `multiboard`         | Cross-board connectivity.                                     |
+| `procurement`        | Part-instance assignment for a manufacturing variant.         |
+| `units`              | Shared engineering-unit conversions.                          |
+
+## Invariants
+
+1. Every endpoint resolves to a component pin.
+2. A net is a stable identity; `connect … as "NAME"` and `net "NAME"` merge onto the same net.
+3. Lowering is deterministic: the same AST and registry produce the same `Board`.
+
+If a downstream stage needs new semantic information, add it to the IR once rather than re-deriving it in each consumer.

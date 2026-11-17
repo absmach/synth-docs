@@ -1,13 +1,30 @@
 ---
 title: synth-place Crate
-description: Automated placement algorithms and spatial indexing in synth-place.
+description: "Deterministic PCB placement, floorplanning, and routability estimation."
 ---
 
 # `synth-place` Crate
 
-The `synth-place` crate calculates optimal (X, Y) coordinates and rotations for components to minimize trace lengths and prevent thermal/mechanical overlapping.
+`synth-place` solves physical component positions and rotations with integer-nanometer arithmetic. The same board and the same `placement_hint` constraints produce the same coordinates.
 
-## Modules
+## Responsibilities
 
-- `placement`: Simulated annealing and force-directed component placement.
-- `spatial`: BVH (Bounding Volume Hierarchy) spatial indexing provided by `synth-geometry`.
+- Global placement and legalization.
+- Floorplanning and outline packing.
+- Constraint handling for `near`, `region`, `side`, `edge`, `rotation`, and `priority`.
+- Placement fitness and routability estimates.
+- Compaction in gap mode.
+
+## Key modules
+
+| Module                        | Responsibility                                           |
+| :---------------------------- | :------------------------------------------------------- |
+| `floorplan`, `outline_packer` | Board outline and coarse placement.                      |
+| `fitness`                     | `PlacementFitness`, `FitnessMetric`, `fitness()`.        |
+| `routability`                 | `RoutabilityEstimate`, `routability()`.                  |
+| `cem`, `compact_gaps`         | Convex/electrostatic placement moves and compaction.     |
+| `advisor`                     | Placement-advisor seam used by the enterprise EBM crate. |
+| `board_family`                | Fixed-form-factor profiles.                              |
+| `score`, `modules`            | Deterministic scoring and module grouping.               |
+
+The placer does not route. It produces the placement that `synth-route`/`synth-router` and `synth-drc` consume.

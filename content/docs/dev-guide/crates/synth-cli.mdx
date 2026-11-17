@@ -1,0 +1,38 @@
+---
+title: synth-cli Crate
+description: "The synth binary: every compiler stage, check, export, and server entry point."
+---
+
+# `synth-cli` Crate
+
+`synth-cli` is the `synth` binary and the front door to the workspace. It wires the crates together, parses arguments, and owns the exit codes and the human-readable summary.
+
+## Commands
+
+| Command                                    | Purpose                                                                                       |
+| :----------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| `validate`                                 | Parse, resolve, lower, and run ERC.                                                           |
+| `fix`                                      | Apply the highest-confidence suggested fix for each blocking diagnostic.                      |
+| `export-kicad`                             | Export a KiCad project; optional Gerbers, drill, STEP, and PnP.                               |
+| `check`                                    | The deterministic release/check contract as stable JSON; `--fab` adds the manufacturing gate. |
+| `layout`, `place`, `route`, `drc`          | Run one stage and print its IR or report.                                                     |
+| `render`                                   | Compile, place, route, and render a 3D PNG.                                                   |
+| `registry`, `part`                         | Inspect, import, and author parts.                                                            |
+| `supply-chain`, `cost`, `procurement-lock` | Supply and cost reports.                                                                      |
+| `mcp`                                      | Start the MCP server (`--stdio` or `--sse`).                                                  |
+| `capability`                               | Print the compiler-owned capability descriptor.                                               |
+| `dump-ast`, `dump-ir`, `schema`            | Debugging and schema output.                                                                  |
+
+## Global flags
+
+`--jobs <N>` (parallel compiler stages), `--registry <DIR>`, `--user-registry <DIR>`, `--strict-registry`.
+
+## Exit codes
+
+| Code | Meaning                                      |
+| :--- | :------------------------------------------- |
+| `0`  | Success.                                     |
+| `1`  | Validation errors or a failed release gate.  |
+| `2`  | Usage error, bad arguments, or missing file. |
+
+The CLI is a thin surface. If a behaviour matters to other tools, it belongs in a crate, not in `main.rs`.

@@ -1,14 +1,22 @@
 ---
 title: synth-route Crate
-description: Multi-layer gridless auto-routing engine in synth-route.
+description: "The native deterministic maze/A* PCB router."
 ---
 
 # `synth-route` Crate
 
-The `synth-route` crate executes multi-layer auto-routing to convert netlist pin connections into physical copper tracks and vias.
+`synth-route` is Synth's native deterministic router: a grid-based maze/A\* engine that turns a placement and a netlist into `synth_pcb` copper.
 
-## Routing Engine Features
+It is not the external-router adapter. `synth-router` selects and runs engines such as KiCadRoutingTools and FreeRouting; `synth-route` is the in-process router used for power rails and local routing.
 
-- **Gridless A* Pathfinding**: Dynamic obstacle avoidance against placed components and clearance keepouts.
-- **Connectivity Solver (`synth-connectivity`)**: Net topology graph analysis and minimum spanning tree (MST) net scheduling.
-- **Via Stack Generator**: Automated via insertion when transitioning between copper layers.
+## Modules
+
+- `grid`, `miter` — routing grid and geometry repair.
+- `bus`, `diff_pair`, `serpentine` — bus, differential-pair, and length-matching routing.
+- `drc` — route-local checks.
+- `logger` — `RoutingOutcomeRecord` for replay advice.
+- `advisor` — a cost-advisor seam used by the enterprise EBM crate.
+
+## Output
+
+`synth_pcb::{Routing, Segment, Via, UnroutedNet}`. The same `(Board, Placement)` produces the same copper; the router never uses wall-clock or host state to break a tie.

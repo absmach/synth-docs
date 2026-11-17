@@ -1,52 +1,136 @@
 ---
-title: Qualification & Compliance
-description: Audit trails, evidence bundles, and compliance support for regulated hardware design in Synth EE.
-enterprise: true
+title: Qualification and Evidence
+description: "How Synth EE records a release: evidence bundles, DRC and ERC reports, hashes, approvals, and the reproducible check contract."
 ---
 
-# Qualification & Compliance
+# Qualification and Evidence
 
-Synth Enterprise Edition includes an automated qualification framework for engineering teams working under regulatory requirements — industrial, aerospace, automotive, and medical hardware applications.
+A board is not finished when the copper looks right. A release needs a record that answers three questions:
 
----
+1. **What was built?** The exact source revision and the generated files.
+2. **What was checked?** The compiler, routing, and native KiCad evidence.
+3. **Who accepted it?** The approval and the audit trail.
 
-## Why It Matters
+Synth EE stores that record with every release. This page explains what it contains and how to reproduce it outside the browser.
 
-Hardware designs in regulated domains must demonstrate that the tools used in the design process are qualified — meaning the tool behaves predictably, its outputs are verifiable, and any deviations are traceable. Synth EE's qualification features are designed to support:
+## What a Release Carries
 
-- **IPC-2221 / IPC Class 3** — high-reliability PCB fabrication standards
-- **DO-254** — airborne electronic hardware assurance (avionics)
-- **ISO 26262** — functional safety for automotive electronics
-- **IEC 62443** — industrial control system security (for hardware supply chain)
+![Delivery and release readiness](/screenshots/enterprise/17-delivery.png)
 
----
+| Artifact                             | What it proves                                                       |
+| :----------------------------------- | :------------------------------------------------------------------- |
+| **Source revision and content hash** | The exact input the build used.                                      |
+| **Build manifest**                   | Synth version, source hash, timestamp, and build parameters.         |
+| **Compiler diagnostics**             | ERC and source-level findings, with their codes and locations.       |
+| **Routing report**                   | Nets, segments, vias, unrouted nets, and return-path advisories.     |
+| **Native DRC report**                | The KiCad rule check on the delivered copper, with the rule profile. |
+| **Netlist hash**                     | A digest of the output netlist, verifiable against the source.       |
+| **Manufacturing files**              | KiCad project, Gerber, drill, BOM, and pick-and-place, with hashes.  |
+| **Approval record**                  | Who approved the release, when, and under which policy.              |
+| **Audit entries**                    | The append-only trail of every action that led to the release.       |
 
-## What Synth EE Generates
+When the deployment is configured for it, the bundle also carries a cryptographic attestation over the artifact hashes. The presence of an attestation is shown in the release record; an unattested bundle is never presented as attested.
 
-Every build in Synth EE produces an evidence bundle alongside the standard design artifacts:
+## Release Readiness
 
-| Artifact | Contents |
-| :--- | :--- |
-| **Build manifest** | Synth version, DSL file hash, timestamp, and build parameters |
-| **DRC evidence** | Full DRC report with rule definitions and pass/fail results |
-| **Netlist hash** | SHA-256 digest of the output netlist, verifiable against the source |
-| **Compiler log** | Structured log of every placement decision and routing pass |
-| **Attestation signature** | Cryptographic signature over the full bundle (available in confidential compute configurations) |
+The **Delivery** tool shows the release verdict. It combines:
 
----
+- The current revision.
+- Whether the checks were run against that revision.
+- Whether any finding is blocking.
+- Whether any physical stage is unattested.
+- Whether the release policy requires an approval.
 
-## Downloading Evidence
+The verdict is one of:
 
-From a completed build in SynthUI:
+| Verdict               | Meaning                                                                       |
+| :-------------------- | :---------------------------------------------------------------------------- |
+| **Ready**             | All required evidence is current and no blocking finding remains.             |
+| **Awaiting approval** | The evidence is complete, but a person with the approval role must accept it. |
+| **Blocked**           | A finding or policy stops the release. Read the blocking item.                |
+| **Unresolved**        | A required stage is unknown or not attested. This is not a pass.              |
 
-1. Open the **Build Details** page.
-2. Click **Download Evidence Bundle**.
-3. You receive a `.zip` containing all artifacts and a `manifest.json` describing their contents and hashes.
+<Callout type="warn" title="Unknown is never treated as a pass">
 
----
+If a validator times out, a renderer is unavailable, or a physical check cannot run, Synth records **unknown** or **not attested** and fails the release gate. It does not infer a pass from the absence of an error.
+
+</Callout>
+
+## Downloading the Evidence
+
+From a board whose release is ready:
+
+1. Open **Delivery**.
+2. Confirm the release verdict and the current revision.
+3. Select **Export**.
+4. Download the `.zip`.
+
+The archive contains the manufacturing files and the evidence record for that revision. Keep the archive with the release; it is the artifact a reviewer or auditor needs.
+
+If the **Manufacturing package** row is disabled, the release is not ready. Open **Checks → Release**; the card names the blocker. A completed build with unattested DRC, an incomplete package, or an unfrozen procurement is not release-ready.
+
+## Reproducing the Check Outside the Browser
+
+The enterprise release boundary is the same deterministic command the open-source compiler exposes. It needs no network and no model.
+
+```bash
+# Source, ERC, placement, routing, and DRC
+synth check qualification/class-a/i2c-sensor-node/i2c_sensor_node.synth \
+  --registry registry/parts \
+  --json
+
+# The same, plus a complete KiCad manufacturing export
+synth check qualification/class-a/i2c-sensor-node/i2c_sensor_node.synth \
+  --registry registry/parts \
+  --fab \
+  --json
+```
+
+The JSON result reports a stable state per stage: **pass**, **fail**, or **unknown**. It includes the source hash and never promotes a timeout or an unavailable physical check to a pass. With `--fab`, the report also contains a hash for every emitted manufacturing file.
+
+For a board whose source declares `manufacturer "jlcpcb"`, the enterprise check uses the verified `jlc-standard` rule profile unless `KICAD_DRC_RULE_PROFILE` is set explicitly. The same profile is sent to the external router and the native validator, so the geometry is never checked under a different fabrication contract.
+
+<Callout type="tip" title="The qualification corpus is the reference">
+
+The open-source repository ships Class A and Class B qualification boards with their review records, exports, reports, and reproduction scripts. Use them to compare your deployment's output with a known-good result. The I2C sensor node, protected power entry, irrigation controller, buck, and USB-UART boards are all in `qualification/`.
+
+</Callout>
+
+## The Qualification Board Walkthrough
+
+The [first-board walkthrough](/user-guide/enterprise/getting-started) imports `qualification/class-a/i2c-sensor-node/i2c_sensor_node.synth`. That board is useful for a first session because it exercises the complete path:
+
+- A mixed-signal design with an MCU, a sensor, memory, power conversion, and connectors.
+- Placement hints and a two-layer outline.
+- A native schematic, a routed PCB, and a fabrication package.
+- A review record with measured DRC and ERC results.
+
+If your deployment's result differs from the record in the qualification README, compare the source hash, the rule profile, and the renderer version before assuming a design problem.
 
 ## Auditor Access
 
-The **Auditor** role provides read-only access to all qualification logs, DRC reports, and evidence bundles across your organization — without being able to trigger builds or modify designs. This is the appropriate role for quality engineers, certifying authorities, or external reviewers.
+The **Auditor** role is for quality engineers, certifying authorities, and external reviewers. It provides read-only access to:
 
-See [Teams & Access Control](/user-guide/enterprise/tenant-management) for how to assign the Auditor role.
+- Release records and evidence bundles.
+- DRC and ERC reports.
+- The audit trail.
+- Manufacturing artifacts.
+
+An auditor cannot edit a design, trigger a build, or approve a release. The role is assigned by a workspace admin or a system administrator, depending on the deployment's Atom policy.
+
+## Approval Policy
+
+A deployment can require an explicit approval before a release becomes exportable. When that policy is on:
+
+1. The build and checks complete normally.
+2. The release card shows **Awaiting approval**.
+3. A person with the approval role reviews the record and approves it.
+4. The approval is written to the audit trail with the actor, time, and revision.
+
+The policy is configured by the deployment administrator. The default local stack does not require an approval; production should decide explicitly.
+
+## What to Read Next
+
+- [Builds, Checks, and Recovery](/user-guide/enterprise/agent-worker) — the evidence behind each card.
+- [Teams and Access](/user-guide/enterprise/tenant-management) — who can approve and who can audit.
+- [Teams and Access](/user-guide/enterprise/tenant-management) — auditor roles and approval policy.

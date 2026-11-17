@@ -1,0 +1,128 @@
+---
+title: Admin and Billing
+description: "The system-administrator console: tenant search, support sessions, beta invites, feature flags, the audit trail, and workspace billing."
+---
+
+# Admin and Billing
+
+This page is for the **system administrator** — the person who operates the Synth EE deployment. Workspace admins manage their own members and projects; system administrators manage the deployment across all workspaces.
+
+<Callout type="warn" title="Two different admin roles">
+
+A **workspace admin** can manage one workspace: members, invitations, projects, and its audit log.
+A **system administrator** can use the console at `/admin`: search every workspace, suspend a tenant, start a support session, and change deployment feature flags.
+Tenant administrators cannot use the system console.
+
+</Callout>
+
+## The Admin Console
+
+Open `/admin` in the workspace. The console is gated on the Atom identity: the server checks that the caller has the system-administrator role, and the browser never sends a role of its own.
+
+If you are not a system administrator, the console shows an explicit denial state. There is no partial view and no hidden data.
+
+![System administrator access required](/screenshots/enterprise/21-admin.png)
+
+### Tenants
+
+Search by name or identifier and open a tenant. The tenant detail shows:
+
+- The tenant's members and their roles.
+- Pending invitations.
+- The tenant's audit events.
+- The current plan and billing status.
+
+From here you can:
+
+| Action                   | Effect                                                                    |
+| :----------------------- | :------------------------------------------------------------------------ |
+| **Suspend tenant**       | Disables the workspace for all members. Reversible with **Restore**.      |
+| **Invite member**        | Creates an Atom invitation for that tenant.                               |
+| **Revoke invitation**    | Cancels a pending invitation.                                             |
+| **Suspend member**       | Suspends the account in every workspace. This is not a workspace removal. |
+| **Restore member**       | Re-enables a suspended account.                                           |
+| **Revoke member access** | Removes the member from the tenant. Refused for the tenant's last admin.  |
+
+Every mutation is written to the audit trail with the actor, target, outcome, and correlation identifier.
+
+### Support Sessions
+
+A support session lets a system administrator read a tenant's state on the tenant's behalf for a bounded time.
+
+- The maximum duration is 60 minutes.
+- Starting and ending a session is audited.
+- The session is checked before every tenant-scoped read.
+- The support session does not grant the tenant's credentials and does not let you impersonate a member.
+
+Use a support session only while you are actively helping the tenant. End it when you are done.
+
+### Beta Invites
+
+If signup is gated, the console manages the allow-list.
+
+- Invite codes are single-use, time-limited, and revocable.
+- Creating and revoking an invite is audited.
+- A beta request can be approved and converted into an invitation.
+
+### Feature Flags
+
+Deployment defaults come from environment variables. A tenant-scoped override can be set from the console.
+
+| Flag                     | Controls                   |
+| :----------------------- | :------------------------- |
+| `SYNTH3D_VIEWER_ENABLED` | The 3D board view.         |
+| `SYNTH3D_M1D_ENABLED`    | The M1d 3D rendering path. |
+| `SYNTH_LOVABLE_UI`       | The React workspace shell. |
+
+The console states which scope produced the value — the tenant override or the deployment default. A tenant override always wins.
+
+### Audit Trail
+
+The console surfaces the shared audit trail. It is append-only and records identifiers, actions, and outcomes only — no request bodies, passwords, tokens, or provider credentials.
+
+You can filter by tenant, action, actor, date range, and free-text search, with pagination.
+
+## Workspace Billing
+
+Workspace members open **Usage & billing** from the sidebar.
+
+![Usage and billing](/screenshots/enterprise/22-billing.png)
+
+The page shows:
+
+- The current plan and its description.
+- Usage against the plan's limits.
+- The plan catalog.
+- A clear **Unavailable** state if the billing provider (AMDM) cannot be reached.
+
+Billing records are owned by AMDM, the billing service. Synth reads them; it does not store a second copy. Plan and subscription mutations are restricted to system administrators at `/admin/billing`.
+
+<Callout type="info" title="Billing unavailable is not a plan change">
+
+If the page says **Billing service unavailable**, the plan and usage cannot be verified right now. The plan catalog may still be visible, but it is not a quote or an entitlement. Ask a system administrator to check the AMDM connection.
+
+</Callout>
+
+## Quotas and Trial Limits
+
+A deployment can enforce quotas on resource-intensive operations:
+
+- Synthesis jobs.
+- Agent runs.
+- Exports.
+- Projects.
+
+The local Compose stack disables quota enforcement by default. Production uses AMDM as the source of plan limits and applies the configured free-trial expiry guard. If an operation is refused, the message names the limit and the plan; it is not a build failure.
+
+## Security Notes for Administrators
+
+- The Atom service token is server-side only. It never reaches the browser.
+- The audit trail is append-only. Do not build tooling that expects to edit it.
+- Correlation identifiers are safe to share in a support request; they contain no session, user, or secret data.
+- Feature flags can change the UI for a tenant. Record why you changed one.
+- A support session is time-limited and audited. End it when the task is done.
+
+## What to Read Next
+
+- [Teams and Access](/user-guide/enterprise/tenant-management) — the workspace-admin view.
+- [Qualification and Evidence](/user-guide/enterprise/qualification) — the release record an auditor sees.

@@ -18,14 +18,33 @@ function MermaidContent({ chart }: { chart: string }) {
   const id = useId();
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
+  const bindFunctionsRef = useRef<((element: Element) => void) | undefined>(
+    undefined,
+  );
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Mermaid's `bindFunctions` attaches tooltips and click handlers by querying
+  // the rendered SVG. Run it after React commits the markup; calling it from a
+  // requestAnimationFrame inside the render effect can bind before the SVG is
+  // in the DOM and silently skip every handler.
+  useEffect(() => {
+    if (svg && containerRef.current) {
+      bindFunctionsRef.current?.(containerRef.current);
+    }
+  }, [svg]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function render() {
       try {
+        // Mermaid calls `selection.transition()` for node tooltips, but d3
+        // marks itself side-effect free, so bundlers drop the d3-transition
+        // import that installs that method. Import it before mermaid renders
+        // or hovering a node with a tooltip throws
+        // "tooltipElem.transition is not a function".
+        await import("d3-transition");
         const { default: mermaid } = await import("mermaid");
 
         mermaid.initialize({
@@ -43,12 +62,8 @@ function MermaidContent({ chart }: { chart: string }) {
         );
 
         if (!cancelled) {
+          bindFunctionsRef.current = bindFunctions;
           setSvg(renderedSvg);
-          requestAnimationFrame(() => {
-            if (containerRef.current && !cancelled) {
-              bindFunctions?.(containerRef.current);
-            }
-          });
         }
       } catch (err) {
         if (!cancelled) {

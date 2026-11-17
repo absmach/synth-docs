@@ -1,147 +1,183 @@
 ---
-title: Quick Start Guide
-description: Build your first circuit board with Synth — clone, build, validate, and export to KiCad.
+title: Quick Start
+description: "Build your first circuit board with Synth — validate an example design, export a KiCad project with schematic, PCB, and BOM, then render the board."
 ---
 
-# Quick Start Guide
+This guide walks you through validating your first design and exporting a complete KiCad project in under 10 minutes, using a design that already exists in the repository.
 
-This guide walks you through cloning Synth, building the CLI, validating an example design, and exporting a KiCad project.
+<Callout type="info" title="New to Synth?">
+
+Read [Core Concepts](/user-guide/concepts) first — it is five minutes and explains the vocabulary this page assumes.
+
+If you would rather **write** a board than run an existing one, go to [Your First Board](/user-guide/first-board) instead. It builds a real USB-C power supply from an empty file and teaches you to read Synth's diagnostics along the way.
+
+</Callout>
 
 ## Prerequisites
 
-- **Rust toolchain** (1.85 or later) — install via [rustup.rs](https://rustup.rs)
-- **KiCad v8+** (optional) — for viewing the exported board and schematic
-- **`kicad-cli`** (optional) — for Gerber, drill, and STEP exports from the command line
+Install Synth first — see [Installation](/user-guide/installation) for prebuilt binaries, `cargo`, and build-from-source.
 
-## Get Synth
-
-Clone the repository and build the CLI:
+This guide runs commands from a `main` checkout, because the example designs and the component registry live in the repository:
 
 ```bash
 git clone https://github.com/absmach/synth.git
 cd synth
-cargo build -p synth-cli
+cargo build -p synth-cli --release
+export PATH="$PWD/target/release:$PATH"
+synth --version
 ```
 
-Verify the build:
+<Callout type="warn">
+
+Run these commands from inside the checkout. The registry resolves relative to it, and a Synth binary paired with a different version of the repository will fail with registry errors. See [Pairing a Binary With Example Designs](/user-guide/installation#pairing-a-binary-with-example-designs).
+
+</Callout>
+
+## Step 1: Validate the Minimal Example
+
+The smallest valid board declares only a name and a layer count:
 
 ```bash
-cargo run -p synth-cli -- --help
+synth validate fixtures/designs/hello.synth
 ```
 
-> [!TIP]
-> All examples below use `cargo run -p synth-cli --` as the `synth` prefix. Once you have a stable binary on your `PATH` you can replace that with just `synth`.
+A clean design prints no errors and exits `0`. This is also your first confirmation that the binary and the registry agree.
 
----
+## Step 2: Explore a Real Design
 
-## 1. Validate the Minimal Example
-
-The smallest valid board just declares a board name and layer count:
+The `examples/` directory holds complete, realistic boards. The environmental logger is a good first read — USB-C power input, an LDO regulator, an STM32 MCU, an I²C sensor, and a debug header:
 
 ```bash
-cargo run -p synth-cli -- validate fixtures/designs/hello.synth
+synth validate examples/env_logger/env_logger.synth
 ```
 
-A clean design exits with code `0` and prints no errors. This is also your first check that the build worked correctly.
-
----
-
-## 2. Explore a Real Design
-
-The `examples/` directory contains complete, realistic boards. The environmental logger is a good starting point — it has USB-C power input, an LDO regulator, an STM32 MCU, an I²C sensor, and a debug header:
-
-```bash
-cargo run -p synth-cli -- validate examples/env_logger.synth
-```
-
-Open `examples/env_logger.synth` in your editor to see how a SynthSpec file is structured:
+Open `examples/env_logger/env_logger.synth` to see how a SynthSpec file is put together:
 
 ```rust
 board "env_logger" {
   layers 2
   manufacturer "jlcpcb"
 
-  component J1: connector  "usb_c_receptacle"
-  component U1: regulator  "ams1117_3v3"
-  component U2: mcu        "stm32f103c8"
-  // ...
+  group "USB-C INPUT / 3V3 LDO" color "#c2410c" {
+    component J1: connector "usb_c_receptacle"
+    component U1: regulator "ams1117_3v3" value "AMS1117-3.3"
+    component C2: capacitor "c_generic_0805" value "22uF"
+  }
 
   connect J1.vbus -> U1.vin
   connect J1.gnd  -> U1.gnd
-  connect U1.vout -> U2.vdd
-  // ...
+  connect U1.vin  -> C2.p1
 }
 ```
 
-**What this means:**
+Reading that line by line:
 
-- `board "env_logger" { ... }` — declares the board name, layer count, and target manufacturer.
-- `component J1: connector "usb_c_receptacle"` — places a USB-C connector. `J1` is the reference designator; `connector` is the component kind; `"usb_c_receptacle"` is the part ID in the registry.
-- `connect J1.vbus -> U1.vin` — connects the `vbus` pin of `J1` to the `vin` pin of `U1`.
+- `board "env_logger" { ... }` declares the board name, its layer count, and the target manufacturer.
+- `group "..." { ... }` bundles related parts. Grouping is what makes the generated sheet readable — an ungrouped board lays out as one flat band.
+- `component J1: connector "usb_c_receptacle"` places a part. `J1` is the reference designator, `connector` is the component kind, and `"usb_c_receptacle"` is the part ID in the registry.
+- `connect J1.vbus -> U1.vin` wires the `vbus` pin of `J1` to the `vin` pin of `U1`.
 
-> [!TIP]
-> The [SynthSpec Reference](/user-guide/dsl-reference) covers all language constructs in detail, including placement hints, differential pairs, and keepout zones.
+<Callout type="info">
 
----
+Give every generic passive a `value`. A missing one is an error (`E-SYNTH-VALUE-001`), not a warning.
 
-## 3. Live Preview
+</Callout>
 
-Start the browser-based schematic viewer to see the design as you edit it:
+For machine-readable output, add `--format json`:
 
 ```bash
-cargo run -p synth-cli -- preview examples/env_logger.synth
+synth validate examples/env_logger/env_logger.synth --format json
 ```
 
-Open the URL printed in the terminal. Save changes to the `.synth` file in your editor — the schematic and diagnostics refresh automatically.
+<Callout type="info">
 
----
+The [SynthSpec Reference](/user-guide/dsl-reference) covers the whole language, including placement hints, differential pairs, and keepout zones.
 
-## 4. Export to KiCad
+</Callout>
 
-Export a full KiCad project (schematic, PCB, BOM):
+## Step 3: Export to KiCad
+
+Export a full project — schematic, PCB, and bill of materials:
 
 ```bash
-cargo run -p synth-cli -- export-kicad examples/env_logger.synth --out output/env_logger
+synth export-kicad examples/env_logger/env_logger.synth --out output/env_logger
 ```
 
 The `output/env_logger/` directory contains:
 
-| File | What it is |
-| :--- | :--- |
-| `env_logger.kicad_pro` | KiCad project file |
-| `env_logger.kicad_sch` | Schematic — open in KiCad Schematic Editor |
-| `env_logger.kicad_pcb` | PCB layout — open in KiCad PCB Editor |
-| `env_logger.kicad_sym` | Schematic symbols |
-| `bom.csv` | Bill of materials with MPN and LCSC part numbers |
+| File                   | What it is                                        |
+| ---------------------- | ------------------------------------------------- |
+| `env_logger.kicad_pro` | KiCad project file                                |
+| `env_logger.kicad_sch` | Schematic — open in the KiCad Schematic Editor    |
+| `env_logger.kicad_pcb` | PCB layout — open in the KiCad PCB Editor         |
+| `env_logger.kicad_sym` | Schematic symbols                                 |
+| `bom.csv`              | Bill of materials, with MPN and LCSC part numbers |
 
-Open the project in KiCad:
+Open it in KiCad:
 
 ```bash
 kicad output/env_logger/env_logger.kicad_pro
 ```
 
-> [!IMPORTANT]
-> Do not hand-edit the generated KiCad files. They are regenerated from the `.synth` source on every export — any manual edits will be overwritten. Make changes in the `.synth` file instead.
+<Callout type="warn">
 
----
+Do not hand-edit the generated KiCad files. They are byte-deterministic re-exports, so any manual edit is destroyed on the next export. Change the `.synth` source instead. Visual tuning belongs in the `<design>.schematic.layout.toml` sidecar — see [KiCad Export](/user-guide/kicad-export).
 
-## 5. Auto-Fix Diagnostics
+</Callout>
 
-If `validate` reports errors, Synth can often apply fixes automatically:
+## Step 4: Render the Board
+
+To look at the result without opening KiCad, render it:
 
 ```bash
-# See what fixes are available (dry run)
-cargo run -p synth-cli -- fix examples/env_logger.synth --dry-run
-
-# Apply fixes in place
-cargo run -p synth-cli -- fix examples/env_logger.synth
+synth render examples/env_logger/env_logger.synth --out output/env_logger.png
 ```
 
----
+This compiles, places, routes, and renders a 3D PNG of the PCB through `kicad-cli`. Useful flags: `--side bottom`, `--quality high`, `--width`/`--height` (2400×1600 by default), and `--svg` to also write a 2D top-copper SVG.
 
-## Next Steps
+<Callout type="info">
 
-- [SynthSpec Reference](/user-guide/dsl-reference) — Full language syntax, component kinds, placement hints, and differential pairs.
-- [CLI Reference](/user-guide/cli) — All subcommands with flags and examples.
-- [Component Registry](/user-guide/registry-and-fixtures) — How to search, import, and author parts.
-- [MCP Server](/user-guide/mcp-server) — Use an AI assistant to validate and edit designs interactively.
+Rendering requires `kicad-cli`. Run `synth routers` to see which external routing engines are installed and usable.
+
+</Callout>
+
+## Step 5: Auto-Fix Diagnostics
+
+When `validate` reports problems, Synth can often repair them. Preview the changes first:
+
+```bash
+synth fix examples/env_logger/env_logger.synth --dry-run
+```
+
+`--dry-run` writes the proposed source to stdout and leaves your file untouched. Apply it when you are happy:
+
+```bash
+synth fix examples/env_logger/env_logger.synth
+```
+
+## Step 6: Gate It for CI
+
+One command is the deterministic, network-free gate for validation and DRC:
+
+```bash
+synth check examples/env_logger/env_logger.synth --json
+```
+
+Add `--fab` to require a complete KiCad manufacturing export and get SHA-256 hashes for the emitted files.
+
+<Callout type="warn">
+
+A stage that could not run is reported as `unknown` and blocks the command. It is never treated as a pass, and `--force` does not override it.
+
+</Callout>
+
+## What's Next?
+
+| Goal                                     | Documentation                                           |
+| ---------------------------------------- | ------------------------------------------------------- |
+| **Write a board yourself, from scratch** | [Your First Board](/user-guide/first-board)             |
+| Learn the full SynthSpec language        | [SynthSpec Reference](/user-guide/dsl-reference)        |
+| See every command and flag               | [CLI Reference](/user-guide/cli)                        |
+| Understand the exported KiCad project    | [KiCad Export](/user-guide/kicad-export)                |
+| Search, import, and author parts         | [Component Registry](/user-guide/registry-and-fixtures) |
+| Drive Synth from an AI agent             | [MCP Server](/user-guide/mcp-server)                    |

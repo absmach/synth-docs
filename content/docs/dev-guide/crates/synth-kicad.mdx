@@ -1,0 +1,35 @@
+---
+title: synth-kicad Crate
+description: "KiCad project, schematic, PCB, BOM, and fabrication export."
+---
+
+# `synth-kicad` Crate
+
+`synth-kicad` turns a `synth_ir::Board` into a self-contained KiCad project:
+
+```text
+<out>/
+  <board>.kicad_pro
+  <board>.kicad_sch
+  <board>.kicad_sym
+  <board>.kicad_pcb
+  bom.csv
+```
+
+The exporter is stateless and deterministic: the same IR produces the same files.
+
+## Key API
+
+- `export` — the full project.
+- `export_schematic_only` — the schematic and symbol library.
+- `run_fab` / `FabRequest` / `FabArtifacts` — optional Gerber, drill, and STEP output through `kicad-cli`.
+- `run_kicad_svg_export` — native schematic SVG.
+- `schem_erc` — native schematic ERC.
+
+## Modules
+
+`export`, `schematic`, `multisheet`, `schem_erc`, `manufacturing`, `fab`, `import`, `sexp`, `uuid_v5`, `pin_reconcile`, `sch_svg`.
+
+## Honesty rules
+
+The exporter does not claim a board is fabricable. It writes the artifacts and the evidence the release gate reads. Missing parts, unresolved pins, or an unreviewed part are reported as diagnostics; the release layer decides whether the package may be called production.

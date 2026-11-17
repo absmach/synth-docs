@@ -1,0 +1,23 @@
+---
+title: synth-supply Crate
+description: "Live LCSC and Nexar/Mouser/DigiKey stock, pricing, lifecycle, and caching."
+---
+
+# `synth-supply` Crate
+
+`synth-supply` queries distributor APIs for stock, pricing, MOQ, and lifecycle, and caches the results in a local SQLite database.
+
+## API
+
+- `SupplyEngine` — the query entry point.
+- `Distributor` — the adapter trait implemented by `LcscDistributor` and `NexarDistributor`.
+- `SupplyCache` — the on-disk cache.
+- `types` — offers, quantities, currencies, and part identities.
+
+## Configuration
+
+Credentials and endpoints come from environment variables or a `.env` file loaded with `load_env_file`. The crate never embeds a credential.
+
+## Scope
+
+Supply data is advisory evidence. A missing distributor identity is a diagnostic (`W-SYNTH-SUPPLY-002`), not a fabrication failure, and a cached price is an estimate until a dated quote backs it.

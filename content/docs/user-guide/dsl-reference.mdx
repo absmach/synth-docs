@@ -1,128 +1,246 @@
 ---
 title: SynthSpec Reference
-description: Complete language reference for .synth design files — board, components, connections, placement hints, differential pairs, and keepout zones.
+description: "Complete reference for the .synth design language — board, components, connections, nets, groups, power rails, netclasses, stackup, placement hints, differential pairs, keepouts, variants, and modules."
 ---
 
-# SynthSpec Reference
+SynthSpec is the language used in `.synth` files. This page documents every statement.
 
-SynthSpec is the design language used in `.synth` files. This page documents the full syntax.
+If you have not written a design before, work through [Your First Board](/user-guide/first-board) first — it introduces the handful of statements you actually need, in the order you need them. This page is for looking things up.
 
-> [!TIP]
-> An AI assistant using the MCP server can call `synth_language_reference` to retrieve this grammar and three complete example designs at runtime.
+<Callout type="info">
 
----
+An AI assistant connected to the [MCP server](/user-guide/mcp-server) can call `synth_language_reference` to get this grammar plus three complete example designs at runtime, so it never has to guess at syntax.
 
-## File Structure
+</Callout>
 
-A `.synth` file contains a single `board` block. Everything lives inside it: components, connections, placement hints, differential pairs, and keepout zones.
+## The Short Version
+
+In practice, most designs use six statements. Everything else on this page is for when you need it:
 
 ```rust
-board "my-board" {
+board "my_board" {                                   // 1. the board
   layers 2
   manufacturer "jlcpcb"
 
-  component R1: resistor "r_generic_0603"
-  component C1: capacitor "c_generic_0603"
+  group "POWER" color "#c2410c" {                    // 2. a labelled block
+    component U1: regulator "ams1117_3v3"            // 3. a part
+              value "AMS1117-3.3"
+    notes "" { "5 V in, 3.3 V out." }                // 4. intent, in prose
+  }
 
-  connect R1.p1 -> C1.p1
+  connect U1.vout -> U2.vdd as "+3V3"                // 5. a wire, 6. a net name
 }
 ```
 
----
+## File Structure
 
-## The `board` Block
+A file contains zero or more `import` statements followed by exactly one `board` block. Everything else lives inside the board.
+
+```text
+[import "relative/path.synth"]*
+board "<name>" {
+  <statement>*
+}
+```
+
+## Board Settings
+
+These go directly inside the `board` block, conventionally at the top.
+
+| Statement               | Required | Description                                                                                   |
+| :---------------------- | :------: | :-------------------------------------------------------------------------------------------- |
+| `layers <n>`            |   Yes    | Copper layer count. Must be `2`, `4`, or `6`.                                                 |
+| `manufacturer "<name>"` |    No    | Fab profile whose rules are checked: `"jlcpcb"`, `"pcbway"`, `"oshpark"`, `"jlc-filled-via"`. |
+| `revision "<tag>"`      |    No    | Revision tag for the schematic title block, e.g. `"A"`, `"1.2"`.                              |
+| `company "<name>"`      |    No    | Design-authority name for the title block. Distinct from `manufacturer`.                      |
+| `requires <process>`    |    No    | Declares a fabrication process the board cannot be built without.                             |
+| `legends <on\|off>`     |    No    | Connector pin legends. Default `off`.                                                         |
 
 ```rust
-board "<name>" {
-  layers <count>
-  manufacturer "<profile>"
-  // components, connections, etc.
+board "my_board" {
+  layers 4
+  manufacturer "jlcpcb"
+  revision "B"
+  company "Acme Robotics"
 }
 ```
 
-| Field | Required | Description |
-| :--- | :---: | :--- |
-| `<name>` | ✅ | Board name (string). Used as the filename stem in exports. |
-| `layers` | ✅ | Number of copper layers. Common values: `2`, `4`. |
-| `manufacturer` | ❌ | Target fab profile for DRC rules (e.g. `"jlcpcb"`, `"pcbway"`, `"oshpark"`). |
+Each of `layers`, `manufacturer`, `revision`, and `company` may appear at most once.
 
----
+### `requires`
+
+Declares a process the board depends on. Today `via_in_pad` is the only one — a via drilled inside an SMD pad, which must be filled and capped, and which at fine pitch is the only escape the geometry permits.
+
+```rust
+requires via_in_pad
+```
+
+<Callout type="warn">
+
+A requirement is not a permission. It is checked against the `manufacturer` profile's capabilities, and a profile that does not offer the process is an **error**, not a silent downgrade. `jlcpcb`, `pcbway`, and `oshpark` do not offer `via_in_pad`; `manufacturer "jlc-filled-via"` (JLCPCB with the resin-filled via option) does.
+
+</Callout>
+
+Repeat the statement for several processes. Declaring one twice is still one requirement.
 
 ## Components
 
-Declare each component with a reference designator, a kind, and a part ID from the registry:
-
-```rust
-component <RefDes>: <kind> "<part_id>"
+```text
+component <RefDes>: <kind> "<part_id>" [value "<display>"] [{ <block> }]
 ```
 
-**Examples:**
+| Part          | Meaning                                                    |
+| :------------ | :--------------------------------------------------------- |
+| `<RefDes>`    | Unique designator on the board: `U1`, `C3`, `R_CC1`.       |
+| `<kind>`      | Coarse category — see [Component Kinds](#component-kinds). |
+| `"<part_id>"` | Registry key naming the actual part.                       |
+| `value "…"`   | Display value for the schematic and BOM.                   |
 
 ```rust
-component J1: connector  "usb_c_receptacle"
-component U1: regulator  "ams1117_3v3"
-component U2: mcu        "stm32f103c8"
-component C1: capacitor  "c_generic_0603"
-component R1: resistor   "r_generic_0603"
-component SW1: switch    "spst_tactile"
+component J1:  connector "usb_c_receptacle"
+component U1:  regulator "ams1117_3v3" value "AMS1117-3.3"
+component R1:  resistor  "r_generic_0603" value "10k"
+component C1:  capacitor "c_generic_0603" value "100nF"
+component D1:  led       "led_green_0603"
 ```
+
+<Callout type="warn">
+
+Give every generic passive a `value`. A missing one is an **error** (`E-SYNTH-VALUE-001`), not a warning — `r_generic_0603` names a package, not a resistance, and without a value the BOM is unorderable.
+
+</Callout>
 
 ### Reference Designators
 
-The `<RefDes>` follows standard EDA conventions:
+Standard EDA prefixes. Synth does not enforce these, but every tool downstream expects them:
 
-| Prefix | Component type |
-| :--- | :--- |
-| `C` | Capacitor |
-| `D` | Diode / LED |
-| `J` | Connector |
-| `L` | Inductor |
-| `Q` | Transistor |
-| `R` | Resistor |
-| `SW` | Switch |
-| `U` | Integrated circuit |
+| Prefix    | Type                 | Prefix | Type               |
+| :-------- | :------------------- | :----- | :----------------- |
+| `C`       | Capacitor            | `Q`    | Transistor         |
+| `D`       | Diode / LED          | `R`    | Resistor           |
+| `J`       | Connector            | `SW`   | Switch             |
+| `L`       | Inductor             | `U`    | Integrated circuit |
+| `Y` / `X` | Crystal / oscillator | `FB`   | Ferrite bead       |
 
 ### Component Kinds
 
-The kind identifies the component's electrical role in the registry. Common kinds:
+The kind is the part's coarse electrical category. Kinds present in the shipped registry:
 
-`capacitor` · `connector` · `crystal` · `diode` · `inductor` · `led` · `mcu` · `regulator` · `resistor` · `sensor` · `switch`
+`antenna` · `buzzer` · `capacitor` · `charger` · `connector` · `crystal` · `diode` · `display` · `filter` · `fuse` · `ic` · `inductor` · `led` · `level_shifter` · `mcu` · `memory` · `modem` · `opamp` · `regulator` · `resistor` · `secure_element` · `sensor` · `switch` · `transistor`
 
-### Part IDs
+### Part IDs and Pin Names
 
-The part ID (the string after the kind) is the registry key — it maps to a `.synth.toml` file in the component registry. Use `synth registry list` or `synth registry search` to find available IDs.
+The part ID maps to a `.synth.toml` entry in the [component registry](/user-guide/registry-and-fixtures), which is also where pin names come from. `connect U1.vout` only works because the registry entry for `ams1117_3v3` declares a pin called `vout`.
 
----
+```bash
+synth registry list        # every available part ID
+```
+
+Do not guess pin names — look them up. A misspelled pin is `E-SYNTH-COMP-002` (undefined pin); a misspelled reference designator is `E-SYNTH-COMP-004`; an unknown part ID is `E-SYNTH-COMP-001`, which helpfully suggests the three closest matches in the registry.
 
 ## Connections
 
-Connect component pins with `->` arrows:
-
-```rust
-connect <RefDes>.<pin> -> <RefDes>.<pin>
+```text
+connect <RefDes>.<pin> -> <RefDes>.<pin> [as "<NET_NAME>"]
 ```
 
-Each `connect` statement joins exactly two pin endpoints onto the same electrical net. Multi-pin nets are expressed with multiple `connect` statements:
+Each statement joins two pins onto one electrical net. To put more than two pins on a net, repeat `connect` and reuse the net name:
 
 ```rust
-// Connect USB-C VBUS through decoupling cap to regulator input
-connect J1.vbus -> C1.p1
-connect C1.p1   -> U1.vin
-connect J1.gnd  -> C1.p2
-connect C1.p2   -> U1.gnd
+connect U1.gnd -> C1.p2 as "GND"
+connect U1.gnd -> C2.p2 as "GND"
+connect U1.gnd -> U2.vss as "GND"   // all four pins, one GND net
 ```
 
-Pin names (`vbus`, `gnd`, `vin`, `p1`, `p2`, …) come from the part definition in the registry. Use `synth registry search "<part_id>"` to inspect a part's pin names.
+<Callout type="info">
 
----
+Always name your nets with `as "…"`. A named net renders its name as the schematic label; an unnamed one is auto-named `net_7`, and `E-SYNTH-SCHEM-014` flags it when it reaches the sheet. Net names should be `UPPERCASE` and 16 characters or fewer (`E-SYNTH-SCHEM-008` / `-009`).
+
+</Callout>
+
+## Named Nets
+
+Declare a net explicitly, optionally listing its member pins, and optionally assigning it a netclass:
+
+```text
+net "<NAME>" [class "<netclass>"] [{ <RefDes>.<pin>* }]
+```
+
+```rust
+net "I2C_SCL" class "I2C" { U1.scl U2.pb6 }
+```
+
+This is an alternative to `connect … as`, useful when you would rather list a bus's members in one place than scatter `connect` statements.
+
+## Power Rails
+
+```text
+power "<RAIL>" <value><unit> [class "<netclass>"] [{ <RefDes>.<pin>* }]
+```
+
+```rust
+power "+3V3" 3.3v
+power "+5V"  5v { U1.vin C1.p1 }
+```
+
+Rails differ from ordinary nets in two ways that matter:
+
+- They render as **power symbols** on the schematic rather than drawn wires, which removes a great deal of visual clutter.
+- The declared voltage feeds the voltage-domain ERC rules, instead of Synth guessing a rail's voltage from pin names.
+
+A bare declaration still creates the net, so later `connect … as "+3V3"` statements join it.
+
+## Groups
+
+```text
+group "<title>" [color "#rrggbb"] [title "<display>"] [region <region>] { <statement>* }
+```
+
+This is the single most important statement for schematic readability. A group becomes a titled, coloured, dashed box on the sheet; its members are placed together inside it; nets that stay inside are drawn as wires, while nets crossing out become labels.
+
+```rust
+group "3V3 LDO" color "#c2410c" {
+  component U2: regulator "ap2112k_3v3" value "AP2112K-3.3"
+  component C5: capacitor "c_generic_0603" value "100nF"
+}
+```
+
+| Attribute           | Effect                                             |
+| :------------------ | :------------------------------------------------- |
+| `color "#rrggbb"`   | Overrides the deterministic palette hue.           |
+| `title "<display>"` | Display title different from the identifier.       |
+| `region <region>`   | Steers which page quadrant the group packs toward. |
+
+<Callout type="warn">
+
+An ungrouped board lays out as one flat band and is effectively unreadable past a handful of parts. Aim for **3–6 groups** named after functional blocks — power input, MCU, sensors, connectors. Reference designators stay board-unique regardless of group, and `connect` may cross group boundaries freely.
+
+</Callout>
+
+## Notes
+
+```text
+notes "<title>" { "<line>"* }
+```
+
+Free prose rendered on the sheet. Inside a `group` it is drawn at the bottom of that group's box; at board level it stacks below all content. Pass `""` as the title for an untitled block.
+
+```rust
+notes "" {
+  "I2C address 0x76 (SDO tied low); CSB high selects I2C."
+  "4.7k bus pull-ups sized for 400 kHz at 3.3 V."
+}
+```
+
+Use it for the intent a netlist cannot carry: I²C addresses, strap choices, current budgets, assembly notes. `E-SYNTH-SCHEM-015` reminds you when a group has none.
 
 ## Placement Hints
 
-Add `placement_hint` blocks inside a component declaration to guide the auto-placer:
+Guide the auto-placer from inside a component declaration. Every attribute is optional and independent — include only what you need.
 
-```rust
-component C4: capacitor "c_generic_0603" {
-  placement_hint { near: "U2" priority: hard }
+```text
+component <RefDes>: <kind> "<part_id>" {
+  placement_hint { region: <region> edge: <edge> near: <RefDes> side: <side> priority: <hard|soft> }
 }
 ```
 
@@ -130,27 +248,82 @@ component C4: capacitor "c_generic_0603" {
 component U1: mcu "rp2350" {
   placement_hint { region: top_left priority: hard }
 }
-```
 
-| Attribute | Values | Description |
-| :--- | :--- | :--- |
-| `near` | `"<RefDes>"` | Place this component close to the referenced component. |
-| `region` | `top_left` · `top_right` · `bottom_left` · `bottom_right` · `center` | Preferred board region. |
-| `priority` | `soft` · `hard` | `soft` is a preference; `hard` pins the component and prevents the solver from moving it. |
-
----
-
-## Differential Pairs
-
-Declare a differential pair with impedance constraints after the components and connections:
-
-```rust
-diff_pair <REFDES>_<pin> <REFDES>_<pin> {
-  impedance <value>
+component C4: capacitor "c_generic_0603" value "100nF" {
+  placement_hint { near: "U2" priority: hard }
 }
 ```
 
-The pair is identified by the component and pin at each endpoint — there is no separate net-naming syntax. Example (USB D+/D−):
+| Attribute  | Accepted values                                                                                                                |
+| :--------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| `region`   | `top_left` · `top_right` · `bottom_left` · `bottom_right` · `centre` · `top_edge` · `bottom_edge` · `left_edge` · `right_edge` |
+| `edge`     | `top` · `bottom` · `left` · `right`                                                                                            |
+| `near`     | Another component's reference designator                                                                                       |
+| `side`     | `above` · `below` · `left` · `right`                                                                                           |
+| `priority` | `soft` (a preference) · `hard` (pins the component; the solver may not move it)                                                |
+
+<Callout type="info">
+
+Note the spelling `centre`, not `center`. An unrecognised region value is a parse error.
+
+</Callout>
+
+## Pin Escape
+
+Controls how a package's pins leave it.
+
+```text
+component <RefDes>: <kind> "<part_id>" {
+  escape { [method <channel|underpad>] [layers "<layer>", …] [off] }
+}
+```
+
+A dense grid array — three or more pad rows and columns at or below 1.3 mm pitch — is escaped before routing whether or not you say so, because a fine-pitch array handed to a general router comes back with a stub on every lane. This block overrides that default.
+
+```rust
+component U1: ic "ice40hx4k_bg121" {
+  escape { method underpad layers "In1.Cu", "In2.Cu" }
+}
+```
+
+| Setting           | Meaning                                                                             |
+| :---------------- | :---------------------------------------------------------------------------------- |
+| `method underpad` | Drops a via inside each pad. The only method a fully populated array leaves open.   |
+| `method channel`  | Routes out between the pads.                                                        |
+| `layers "…"`      | Limits which copper the escape may use.                                             |
+| `off`             | Leaves the package to the general router. Wins over a `method` on the same package. |
+
+The escape via is sized from the declared manufacturer's floor, not from this block.
+
+## Net Classes
+
+```text
+netclass "<name>" {
+  [trace_width <value><unit>] [clearance <value><unit>]
+  [via_diameter <value><unit>] [via_drill <value><unit>]
+  [layers "<layer>", …] [color "#rrggbb"]
+}
+```
+
+Nets are auto-classified (Power, Ground, I2C, SPI, UART, USB, Clock, Reset) and coloured from a fixed palette. A declared class joined with `class "<name>"` overrides both.
+
+```rust
+netclass "PWR" {
+  trace_width 0.4mm
+  clearance 0.25mm
+  color "#d55e00"
+}
+```
+
+`layers` pins the class's nets to specific KiCad copper layers (`"F.Cu"`, `"In1.Cu"`, `"B.Cu"`): the router keeps them there, the export writes it as a KiCad custom rule, and copper anywhere else is `E-SYNTH-DRC-023`. Pinning a controlled-impedance pair to outer layers is how you clear `W-SYNTH-IMPEDANCE-001`.
+
+## Differential Pairs
+
+```text
+diff_pair <NET_P> <NET_N> { impedance <value><unit> }
+```
+
+Marks two already-connected nets as a differential pair with a target characteristic impedance.
 
 ```rust
 connect J1.dp -> U1.usb_dp
@@ -161,109 +334,204 @@ diff_pair U1_usb_dp U1_usb_dn {
 }
 ```
 
----
+<Callout type="info">
+
+There is no separate net-naming syntax for pairs. Each leg is written `<REFDES>_<pin>` and matched against any net having that component and pin as an endpoint — which also means a pair's legs must be reachable this way. If a net was auto-named and has no identifying endpoint, name it with `as "…"` first.
+
+</Callout>
 
 ## Keepout Zones
 
-Define a keepout area by name and radius:
+```text
+keepout <name> { radius <value><unit> }
+```
+
+A circular region the router must avoid — under an antenna, for instance.
 
 ```rust
-keepout <name> {
-  radius <length>
+keepout antenna { radius 15mm }
+```
+
+## Stackup
+
+Declares the board's physical layers from top to bottom. Copper and insulator entries alternate, starting and ending with copper.
+
+```text
+stackup { copper <t><unit> | insulator <t><unit> er <number> [material "<name>"] ... }
+```
+
+```rust
+stackup {
+  copper 0.035mm
+  insulator 1.5mm er 4.4 material "FR4"
+  copper 0.035mm
 }
 ```
 
-Example — keep copper away from the USB connector area:
+The number of copper entries must equal `layers` (`E-SYNTH-STACKUP-001`). `er` is the insulator's dielectric constant, a plain number. The exporter writes the stack into the `.kicad_pcb` stackup section and sets board thickness to the stack total.
+
+<Callout type="info">
+
+Synth ships no fabricator presets and no default stack. Omit the block and the board exports with the exporter's default thickness and no stackup section at all — which is fine until you need controlled impedance.
+
+</Callout>
+
+## Build Variants
+
+```text
+variant "<name>" [description "<text>"] { dnp <RefDes>* }
+```
+
+One schematic and one layout, with some parts left unpopulated.
 
 ```rust
-keepout usb_connector_zone {
-  radius 8mm
+variant "lite" description "No radio" { dnp U3 U4 }
+```
+
+Exports as KiCad 10 native variants plus a `bom.<variant>.csv` per variant. ERC still checks parts marked do-not-populate.
+
+## Hierarchical Sheets
+
+```text
+sheet "<name>" { <statement>* }
+```
+
+Statements lower exactly as in a `group` — reference designators stay board-unique and cross-sheet `connect` is allowed — but the name is also a split point. A board whose single-sheet content overflows A2 **and** which has two or more populated boundaries exports as a KiCad hierarchy, one file per sheet. Small boards stay on one page.
+
+```rust
+sheet "Power" {
+  component U1: regulator "ams1117_3v3" value "AMS1117-3.3"
 }
 ```
 
----
+## Modules
+
+Reusable parameterised sub-circuits, for when a block repeats.
+
+```text
+module <Name> [( <param> = <default>, … )] { port <Port>: <interface>  <statement>* }
+interface <Name> { <signal>* }
+bus <Name> { <member>* }
+use <Module> as <Prefix> [( <param> = <value> )]
+bind <Prefix>.<Port> -> <target>
+```
+
+```rust
+interface Gpio { sig }
+
+module LedBank(count = 3) {
+  port ctrl: Gpio
+  component R1: resistor "r_generic_0603" value "1k"
+}
+
+use LedBank as LB1 ( count = 4 )
+bind LB1.ctrl -> "GPIO2"
+```
+
+| Keyword     | Role                                                       |
+| :---------- | :--------------------------------------------------------- |
+| `module`    | Defines the sub-circuit and its parameters.                |
+| `port`      | A connection point on the module, typed by an `interface`. |
+| `interface` | Names a bundle of signals a port can carry.                |
+| `bus`       | Groups member nets under one name.                         |
+| `use`       | Instantiates a module under a reference-designator prefix. |
+| `bind`      | Wires an instance's port to a net or interface.            |
+
+## Imports
+
+```text
+import "<relative/path.synth>"
+```
+
+Inlines another file's statements at that point. Paths must be relative, contain no `..` segments, and resolve from the importing file's directory. Import cycles are rejected.
+
+```rust
+import "common/power_tree.synth"
+
+board "my_board" {
+  layers 2
+}
+```
 
 ## Units
 
-Length values accept an explicit unit suffix: `mm`, `mil`, `um`, `in`.  
-Resistance and impedance use `ohm` with standard SI prefixes: `50ohm`, `90ohm`, `100ohm`.
+A numeric literal takes an explicit unit suffix. These are the **only** accepted units:
 
----
+| Quantity    | Units                   |
+| :---------- | :---------------------- |
+| Length      | `mm` · `mil`            |
+| Resistance  | `ohm` · `kohm` · `mohm` |
+| Voltage     | `v` · `mv`              |
+| Current     | `a` · `ma`              |
+| Frequency   | `mhz` · `ghz`           |
+| Capacitance | `pf` · `nf` · `uf`      |
+
+```rust
+radius 8mm
+impedance 90ohm
+power "+3V3" 3.3v
+```
+
+<Callout type="warn">
+
+`um`, `in`, `cm`, `hz`, and `khz` are **not** valid units and produce `E-SYNTH-PARSE-023`. Note also that these units apply to _numeric literals_; the `value "100nF"` on a component is a free-form display string, which is why it is quoted.
+
+</Callout>
 
 ## Comments
 
-```rust
-// Single-line comment
-
-/* Multi-line
-   comment */
-```
-
----
-
-## Complete Example
-
-From `examples/env_logger.synth` — a 2-layer USB-C environmental logger with an STM32 MCU:
+Both forms are supported. Block comments do not nest.
 
 ```rust
-board "env_logger" {
-  layers 2
-  manufacturer "jlcpcb"
+// Line comment, to end of line
 
-  // Power chain: USB-C 5V → AMS1117 3.3V
-  component J1:    connector  "usb_c_receptacle"
-  component R_CC1: resistor   "r_generic_0603"   // 5.1k CC1 pull-down
-  component R_CC2: resistor   "r_generic_0603"   // 5.1k CC2 pull-down
-  component U1:    regulator  "ams1117_3v3"
-  component C1:    capacitor  "c_generic_0805"   // VBUS bulk cap
-  component C2:    capacitor  "c_generic_0805"   // LDO input cap
-  component C3:    capacitor  "c_generic_0805"   // LDO output cap
-
-  connect J1.vbus -> C1.p1
-  connect J1.gnd  -> C1.p2
-  connect J1.cc1  -> R_CC1.p1
-  connect J1.gnd  -> R_CC1.p2
-  connect J1.cc2  -> R_CC2.p1
-  connect J1.gnd  -> R_CC2.p2
-  connect J1.vbus -> U1.vin
-  connect J1.gnd  -> U1.gnd
-  connect U1.vin  -> C2.p1
-  connect U1.gnd  -> C2.p2
-  connect U1.vout -> C3.p1
-  connect U1.gnd  -> C3.p2
-
-  // MCU + decoupling
-  component U2: mcu "stm32f103c8"
-  component C4: capacitor "c_generic_0603" {
-    placement_hint { near: "U2" priority: hard }
-  }
-
-  connect U1.vout -> U2.vdd
-  connect U1.gnd  -> U2.vss
-  connect U2.vdd  -> C4.p1
-  connect U2.vss  -> C4.p2
-
-  // BME680 I2C sensor
-  component U3: sensor "bme680_env"
-  component R2:  resistor "r_generic_0603"   // SDA pull-up 4.7k
-  component R3:  resistor "r_generic_0603"   // SCL pull-up 4.7k
-
-  connect U1.vout -> U3.vdd
-  connect U1.gnd  -> U3.gnd
-  connect U2.pb7  -> U3.sda
-  connect U2.pb6  -> U3.scl
-  connect U2.pb7  -> R2.p1
-  connect R2.p2   -> U1.vout
-  connect U2.pb6  -> R3.p1
-  connect R3.p2   -> U1.vout
-}
+/* Block comment,
+   across several lines */
 ```
 
-See the full file at `examples/env_logger.synth` in the repository. Additional examples:
+## String Escapes
 
-| File | Demonstrates |
-| :--- | :--- |
-| `fixtures/designs/hello.synth` | The smallest valid board |
-| `examples/env_logger.synth` | MCU, LDO, I²C sensor, debug header |
-| `examples/sensor_logger.synth` | USB-C, dual I²C sensors, SPI flash, LEDs |
-| `examples/placement_and_diff_pair.synth` | Hard placement hints, differential pairs, keepout zones |
+Strings accept `\\`, `\"`, `\n`, `\t`, and `\r`.
+
+## Complete Examples
+
+Three complete designs ship in the repository. Each is validated in CI, so they are reliable to copy from:
+
+| File                                                             | Demonstrates                                                                        |
+| :--------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| `fixtures/designs/hello.synth`                                   | The smallest valid board                                                            |
+| `examples/env_logger/env_logger.synth`                           | Groups, notes, USB-C power, LDO, STM32 MCU, I²C sensor, reset circuit, debug header |
+| `examples/sensor_logger/sensor_logger.synth`                     | 4 layers, ESD protection, dual I²C sensors, SPI flash, status LEDs                  |
+| `examples/placement_and_diff_pair/placement_and_diff_pair.synth` | Hard placement hints, a differential pair with impedance, a keepout zone            |
+
+Additional single-feature cases live in `fixtures/designs/` — useful when you want to see one statement in isolation.
+
+## Statement Index
+
+Every statement, for quick scanning:
+
+| Statement                                        | Where               | Purpose                      |
+| :----------------------------------------------- | :------------------ | :--------------------------- |
+| [`import`](#imports)                             | Before `board`      | Inline another file          |
+| [`layers`](#board-settings)                      | Board               | Copper layer count           |
+| [`manufacturer`](#board-settings)                | Board               | DRC profile                  |
+| [`revision`](#board-settings)                    | Board               | Title-block revision         |
+| [`company`](#board-settings)                     | Board               | Title-block company          |
+| [`requires`](#requires)                          | Board               | Mandatory fab process        |
+| [`legends`](#board-settings)                     | Board               | Connector pin legends        |
+| [`stackup`](#stackup)                            | Board               | Physical layer stack         |
+| [`component`](#components)                       | Board, group, sheet | Declare a part               |
+| [`placement_hint`](#placement-hints)             | Component           | Guide the placer             |
+| [`escape`](#pin-escape)                          | Component           | Pin-escape strategy          |
+| [`connect`](#connections)                        | Board, group, sheet | Wire two pins                |
+| [`net`](#named-nets)                             | Board               | Name a net explicitly        |
+| [`power`](#power-rails)                          | Board               | Declare a power rail         |
+| [`netclass`](#net-classes)                       | Board               | Routing and colour class     |
+| [`group`](#groups)                               | Board               | Labelled sub-circuit region  |
+| [`notes`](#notes)                                | Board, group        | Prose on the sheet           |
+| [`diff_pair`](#differential-pairs)               | Board               | Differential pair constraint |
+| [`keepout`](#keepout-zones)                      | Board               | Routing exclusion zone       |
+| [`variant`](#build-variants)                     | Board               | Build variant with DNP parts |
+| [`sheet`](#hierarchical-sheets)                  | Board               | Hierarchical sheet boundary  |
+| [`module`](#modules)                             | Board               | Reusable sub-circuit         |
+| [`interface` / `bus` / `use` / `bind`](#modules) | Board               | Module plumbing              |

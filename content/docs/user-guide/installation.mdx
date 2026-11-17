@@ -1,0 +1,191 @@
+---
+title: Installation
+description: "Install Synth, the open-source compiler for circuit boards. Prebuilt binaries for Linux, macOS, and Windows, plus cargo and build-from-source instructions."
+---
+
+This guide covers the three ways to install Synth and how to pair a Synth binary with a matching set of example designs.
+
+Pick one:
+
+| Method                                  | Best for                                                         |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| [Prebuilt binary](#prebuilt-binary)     | Trying Synth out, and CI. No toolchain needed.                   |
+| [Cargo](#cargo)                         | You already have Rust and want a specific tag or `main`.         |
+| [Build from source](#build-from-source) | Working on Synth itself, or you need the latest unreleased code. |
+
+## Prerequisites
+
+Nothing is required for the prebuilt binary. The other two methods need a Rust toolchain.
+
+| Tool                                           | Version | Purpose                                             |
+| ---------------------------------------------- | ------- | --------------------------------------------------- |
+| [Rust](https://rustup.rs/)                     | 1.85+   | Building Synth from source or via `cargo`           |
+| [KiCad](https://www.kicad.org/download/)       | 8.0+    | Opening the exported schematic and board            |
+| [`kicad-cli`](https://www.kicad.org/download/) | 8.0+    | Gerber, drill, and STEP exports; native ERC and DRC |
+
+KiCad and `kicad-cli` are optional. Synth exports a project without them, but any command that asks for verification will report its result as `unknown` rather than passing.
+
+<Callout type="info">
+
+`rustup` installs both the Rust toolchain and `cargo`. A source checkout pins its own toolchain in `rust-toolchain.toml`, so rustup fetches the right version automatically.
+
+</Callout>
+
+## Prebuilt Binary
+
+Every [GitHub release](https://github.com/absmach/synth/releases) ships a `synth` binary for five platforms, each with a SHA-256 checksum beside it.
+
+| Platform       | Asset                     |
+| -------------- | ------------------------- |
+| Linux x86-64   | `synth-linux-amd64`       |
+| Linux arm64    | `synth-linux-arm64`       |
+| macOS arm64    | `synth-darwin-arm64`      |
+| macOS x86-64   | `synth-darwin-amd64`      |
+| Windows x86-64 | `synth-windows-amd64.exe` |
+
+Download the asset for your platform, verify it, and put it on your `PATH`:
+
+```bash
+base="https://github.com/absmach/synth/releases/latest/download"
+asset="synth-linux-amd64"          # pick your platform from the table above
+
+curl -LO "$base/$asset"
+curl -LO "$base/$asset.sha256"
+sha256sum -c "$asset.sha256"       # macOS: shasum -a 256 -c "$asset.sha256"
+
+sudo install -m 755 "$asset" /usr/local/bin/synth
+synth --version
+```
+
+Expected:
+
+```bash
+synth 0.1.2
+```
+
+On Windows, verify the checksum with `certutil -hashfile synth-windows-amd64.exe SHA256` and compare it against the `.sha256` file.
+
+<Callout type="info">
+
+The Linux binaries are built against glibc 2.35, so they run on Debian Bookworm, Ubuntu 22.04, and newer.
+
+</Callout>
+
+## Cargo
+
+Synth is not published to crates.io, so install it from Git.
+
+```bash
+# A specific release
+cargo install --git https://github.com/absmach/synth --tag v0.1.2 --locked synth-cli
+
+# Current main
+cargo install --git https://github.com/absmach/synth --locked synth-cli
+```
+
+<Callout type="warn">
+
+Do not run `cargo install synth-cli`. The `synth-cli` crate on crates.io is an unrelated project — a WebAssembly-to-ARM compiler — and installing it will give you the wrong binary.
+
+</Callout>
+
+## Build from Source
+
+### Step 1: Clone and Build
+
+```bash
+git clone https://github.com/absmach/synth.git
+cd synth
+cargo build -p synth-cli --release
+```
+
+### Step 2: Verify the Build
+
+```bash
+./target/release/synth --help
+```
+
+The binary is at `target/release/synth`. Copy it onto your `PATH` if you want to call it as `synth`:
+
+```bash
+sudo install -m 755 target/release/synth /usr/local/bin/synth
+```
+
+## Pairing a Binary With Example Designs
+
+This step is easy to skip and it causes confusing failures, so it is worth two minutes.
+
+The component registry and the example designs live **inside the repository**, not inside the binary. A Synth binary therefore only works with a checkout from the same version. Mixing them produces errors that look like broken parts rather than a version mismatch:
+
+```text
+registry load failed (strict): kicad_symbol `Sensor_Temperature:TMP117xxDRV`
+does not declare pin number `7` (registry pin `ep`)
+```
+
+Use one of these two pairings, not a mixture.
+
+### Option A — A Released Version
+
+Download the binary from a **specific tag** rather than `latest`, and check out that same tag:
+
+```bash
+git clone https://github.com/absmach/synth.git
+cd synth
+git checkout refs/tags/v0.1.2
+
+curl -LO "https://github.com/absmach/synth/releases/download/v0.1.2/synth-linux-amd64"
+curl -LO "https://github.com/absmach/synth/releases/download/v0.1.2/synth-linux-amd64.sha256"
+sha256sum -c synth-linux-amd64.sha256
+chmod +x synth-linux-amd64
+
+./synth-linux-amd64 validate fixtures/designs/hello.synth
+```
+
+<Callout type="warn">
+
+Check out `refs/tags/v0.1.2`, not `v0.1.2`. The repository has both a tag and a branch with that name, pointing at different commits, and `git checkout v0.1.2` resolves to the branch. The releases are built from the tags.
+
+</Callout>
+
+Note that example paths differ between versions. At `v0.1.2` the designs are flat (`examples/env_logger.synth`); on `main` each example has its own directory (`examples/env_logger/env_logger.synth`).
+
+### Option B — Current `main`
+
+Build from the same checkout you are running examples from. This is the pairing the [Quick Start](/user-guide/quick-start) uses:
+
+```bash
+git clone https://github.com/absmach/synth.git
+cd synth
+cargo build -p synth-cli --release
+./target/release/synth validate fixtures/designs/hello.synth
+```
+
+## Optional: KiCad Integration
+
+Native ERC, DRC, schematic rendering, and fabrication outputs shell out to `kicad-cli`.
+
+```bash
+kicad-cli version
+```
+
+If `kicad-cli` is not on your `PATH`, point Synth at it:
+
+```bash
+export KICAD_CLI=/path/to/kicad-cli
+export SYNTH_KICAD_CLI_TIMEOUT_SECS=300   # per-run budget, default 300
+```
+
+<Callout type="warn">
+
+A check that could not run is never reported as a check that passed. Without `kicad-cli`, a plain `synth export-kicad` still writes a project and records the stage as `unknown`, but any command that requested verification — `--validate-erc`, `--gerbers`, `--drill`, `--step`, or `synth check --fab` — fails closed.
+
+</Callout>
+
+## What's Next?
+
+| Goal                                 | Documentation                                    |
+| ------------------------------------ | ------------------------------------------------ |
+| Validate and export your first board | [Quick Start](/user-guide/quick-start)           |
+| Learn the SynthSpec language         | [SynthSpec Reference](/user-guide/dsl-reference) |
+| See every command and flag           | [CLI Reference](/user-guide/cli)                 |
+| Drive Synth from an AI agent         | [MCP Server](/user-guide/mcp-server)             |

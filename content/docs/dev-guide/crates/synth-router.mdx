@@ -1,0 +1,37 @@
+---
+title: synth-router Crate
+description: "External router adapters, capability discovery, and independent validation of returned copper."
+---
+
+# `synth-router` Crate
+
+`synth-router` is the boundary between Synth and external autorouters. Synth owns the source, topology, placement, constraints, and export; this crate owns selecting an engine, running it inside hard limits, and deciding whether the copper that came back may be called routed.
+
+## Public API
+
+```rust
+use synth_router::{route, route_best_of, RouteRequest};
+
+let report = route(&request);
+```
+
+- `route(&RouteRequest) -> RouteReport` — run one engine.
+- `route_best_of(&RouteRequest, &[RouterEngine]) -> Portfolio` — run several and keep the best.
+- `write_artifact` — persist the run record.
+
+## Modules
+
+`capability`, `contract`, `drc`, `escape`, `failure`, `freerouting`, `island_vias`, `kicad_routing_tools`, `label_vias`, `outcomes`, `process`, and `result`.
+
+## The trust rule
+
+A router's exit code of zero is not success. The terminal state is one of:
+
+| State                | Meaning                                                         |
+| :------------------- | :-------------------------------------------------------------- |
+| `routed`             | Copper is connected and independently validated.                |
+| `review_required`    | Copper exists but a non-blocking finding needs a human.         |
+| `router_unavailable` | The engine is not installed or failed to start.                 |
+| `validation_failed`  | Copper failed connectivity, DRC, escape, or return-path checks. |
+
+`island_vias` and `label_vias` repair pour islands and reference labels; `escape` reports fine-pitch packages that cannot escape under the selected fabrication floor.

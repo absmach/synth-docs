@@ -1,0 +1,25 @@
+---
+title: synth-mcp Crate
+description: "The Model Context Protocol server over stdio and HTTP/SSE."
+---
+
+# `synth-mcp` Crate
+
+`synth-mcp` exposes the compiler to AI agents over the Model Context Protocol.
+
+## Transports
+
+| Transport | Entry point                                                    |
+| :-------- | :------------------------------------------------------------- |
+| stdio     | `run_stdio_server` — the recommended path for agent harnesses. |
+| HTTP/SSE  | `run_sse_server` — JSON-RPC endpoints for custom agents.       |
+
+## API
+
+- `list_tools`, `call_tool`, `McpToolInfo` — the tool catalogue and dispatcher.
+- `handle_jsonrpc_request` — one request, for embedding the server in another process.
+- `SERVER_INSTRUCTIONS` — the standing rules returned to clients.
+- `AuditLogger`, `AuditEvent` — an append-only tool-call audit log.
+- `CloudMcpServer`, `RateLimiter` — the hosted endpoint extension.
+
+The crate does not implement the compiler. It validates tool arguments, calls the CLI/compiler entry points, and returns structured results. Long-running routes and exports are bounded by the caller's timeout; a stage that cannot run is returned as `unknown`/`unavailable`, never as a pass.

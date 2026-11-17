@@ -1,0 +1,26 @@
+---
+title: synth-render Crate
+description: "Deterministic SVG rasterization and pixel diffing for visual feedback."
+---
+
+# `synth-render` Crate
+
+`synth-render` turns an SVG into a PNG and compares PNGs pixel-for-pixel. It exists so the schematic visual-feedback loop is reproducible across machines and sessions.
+
+## API
+
+```rust
+use synth_render::{svg_to_png, diff_pngs, visible_text_count};
+
+let png = svg_to_png(svg, 1600)?;
+let diff = diff_pngs(&before, &after)?;
+```
+
+- `svg_to_png(svg, width_px)` — deterministic rasterization.
+- `diff_pngs(before, after)` — `PixelDiff` with changed pixels and bounding box.
+- `visible_text_count(svg)` — catches a sheet that rendered no text.
+- `Rendered`, `RenderError`, `PixelDiff` — result types.
+
+The rendering stack is pinned in the workspace manifest. That is what makes a stored baseline meaningful: a changed pixel is a changed design or layouter, not a different font build.
+
+Used by the MCP `synth_render_schematic`/`synth_schematic_baseline` tools and by CI's visual regression checks.

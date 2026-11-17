@@ -1,60 +1,10 @@
 import { docs } from "fumadocs-mdx:collections/server";
-import { type InferPageType, loader, type Source } from "fumadocs-core/source";
+import { type InferPageType, loader } from "fumadocs-core/source";
 import { NewBadge } from "@/components/mdx/new-badge";
-import { CURRENT_EDITION } from "@/lib/edition";
-
-function dirOf(path: string) {
-  return path.split("/").slice(0, -1).join("/");
-}
-
-function join(dir: string, name: string) {
-  return dir ? `${dir}/${name}` : name;
-}
-
-function filterForEdition<T extends Source>(source: T): T {
-  if (CURRENT_EDITION !== "community") return source;
-
-  const gatedDirs = source.files
-    .filter(
-      (file) =>
-        file.type === "meta" &&
-        (file.data as { enterprise?: boolean }).enterprise,
-    )
-    .map((file) => file.path.replace(/meta\.json$/, ""));
-
-  const isGated = (file: (typeof source.files)[number]) => {
-    if (gatedDirs.some((dir) => file.path.startsWith(dir))) return true;
-    if (
-      file.type === "page" &&
-      (file.data as { enterprise?: boolean }).enterprise
-    )
-      return true;
-    return false;
-  };
-
-  const kept = source.files.filter((file) => !isGated(file));
-  const keptPaths = new Set(kept.map((file) => file.path));
-
-  const files = kept.map((file) => {
-    const pages = (file.data as { pages?: string[] }).pages;
-    if (file.type !== "meta" || !Array.isArray(pages)) return file;
-
-    const dir = dirOf(file.path);
-    const filteredPages = pages.filter(
-      (name) =>
-        keptPaths.has(join(dir, `${name}/meta.json`)) ||
-        keptPaths.has(join(dir, `${name}.mdx`)),
-    );
-
-    return { ...file, data: { ...file.data, pages: filteredPages } };
-  });
-
-  return { ...source, files } as T;
-}
 
 export const source = loader({
   baseUrl: "/",
-  source: filterForEdition(docs.toFumadocsSource()),
+  source: docs.toFumadocsSource(),
   plugins: [],
   pageTree: {
     transformers: [
@@ -82,18 +32,13 @@ export const source = loader({
   },
 });
 
-export function getPageImage(page: InferPageType<typeof source>) {
+export type DocsSource = typeof source;
+export type DocsPage = InferPageType<DocsSource>;
+
+export function getPageImage(page: DocsPage) {
   const segments = [...page.slugs, "image.webp"];
   return {
     segments,
     url: `/og/${segments.join("/")}`,
   };
-}
-
-export async function getLLMText(page: InferPageType<typeof source>) {
-  const processed = await page.data.getText("processed");
-
-  return `# ${page.data.title}
-
-${processed}`;
 }

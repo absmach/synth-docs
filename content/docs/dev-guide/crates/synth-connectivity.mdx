@@ -1,0 +1,28 @@
+---
+title: synth-connectivity Crate
+description: "The single source of truth for electrical connectivity across ERC, placement, routing, DRC, and netlist export."
+---
+
+# `synth-connectivity` Crate
+
+`synth-connectivity` derives the authoritative netlist from a `synth_ir::Board`. It exists so ERC, placement, routing, DRC, and export do not each re-derive connectivity in a slightly different way.
+
+## Public API
+
+```rust
+use synth_connectivity::{build_connectivity, build_project_connectivity};
+
+let connectivity = build_connectivity(&board);
+```
+
+- `build_connectivity(&Board)` — one board.
+- `build_connectivity_with_layout` — a board plus its placement, for stages that need placed pins.
+- `build_project_connectivity(&[&Board])` — a multi-board project.
+
+## Types
+
+- `Connectivity` — the derived netlist.
+- `Net`, `Terminal`, `NetClass` — nets, their endpoints, and their electrical class.
+- `netlist` — the serializable netlist form.
+
+Synth's connectivity is explicit in the IR: `connect` statements and `net`/`power` blocks create endpoints. The derivation resolves those endpoints to actual pins, merges same-named nets, and builds the final net set. If a stage disagrees with the netlist, the bug is in that stage, not in a second parser.
