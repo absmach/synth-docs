@@ -1,0 +1,101 @@
+---
+title: Artifact Qualification
+description: "What was verified about Synth EE downloads, exports, retention and notifications: revision binding, provenance headers, access boundaries, browser evidence and known gaps."
+---
+
+# Artifact Qualification
+
+This page records the qualification of Synth EE artifact downloads, manufacturing exports, retention and notifications (issue #232). It states what was tested, what passed, and what is still open.
+
+**Verdict: not ready for production. Ready for a closed or internal beta** with the conditions listed under [Known gaps](#known-gaps).
+
+## Provenance of every download
+
+Every downloaded artifact carries headers that tie it to the revision it was built from:
+
+| Header                     | Meaning                                              |
+| :------------------------- | :--------------------------------------------------- |
+| `x-synth-artifact-sha256`  | SHA-256 of the exact response body.                  |
+| `x-synth-revision-id`      | The revision the job was built from.                 |
+| `x-synth-correlation-id`   | An ID to quote when reporting a failed download.     |
+
+Results by artifact:
+
+| Artifact                | Revision bound                          | Body hash exposed | Verdict |
+| :---------------------- | :-------------------------------------- | :---------------- | :------ |
+| PCB, schematic          | Yes. `409` if the job has no revision.  | Yes               | Pass    |
+| Schematic PDF           | Header carries the job revision.        | Yes               | Pass    |
+| Gerber and drill ZIP    | Yes. `409` if unbound or mismatched.    | Yes               | Pass    |
+| Manufacturing ZIP       | Same archive as the Gerber ZIP.         | Yes               | Pass    |
+| BOM, CPL, procurement   | Through the release manifest.           | Per-file hashes   | Pass    |
+| Cost report             | Header carries the job revision.        | Yes               | Pass    |
+| Manufacturing review    | Revision in the JSON and the header.    | Yes               | Pass    |
+
+An older job keeps its own revision after a new revision is created. Repeated PCB and schematic downloads are byte-identical. Repeated ZIP downloads keep the same canonical hash, although raw ZIP bytes can differ by one timestamp second.
+
+## Acceptance criteria
+
+| Criterion                                                | Result                                                                                                                                         |
+| :------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| Every download identifies its revision and provenance    | **Pass.** Kind, body hash, revision, compiler version and evidence status on every route.                                                      |
+| Incomplete packages cannot appear complete               | **Partial.** Package builds fail closed and archives are hash-validated. An object-store outage during an artifact read returns an empty `200`. |
+| Unauthorized and expired links fail safely               | **Pass with conditions.** Tenant, role and removed-member boundaries hold. Signed, expiring URLs are not implemented.                           |
+| Notifications do not expose private design data          | **Pass with conditions.** Payloads carry identifiers only, and removed members are suppressed.                                                  |
+| Retries are idempotent                                   | **Partial.** Concurrent downloads give identical canonical hashes. There is no generation lock, and every ZIP request rebuilds the package.     |
+
+## Browser evidence
+
+Checked in Chromium against the local Compose stack with the object-store backend. The account and job IDs are redacted.
+
+![Browser download results](/screenshots/enterprise/artifacts/00-results-table.png)
+
+| Check                                  | Result                                                                                      |
+| :------------------------------------- | :------------------------------------------------------------------------------------------ |
+| PCB and schematic download             | The saved file matches the API body byte for byte and equals `x-synth-artifact-sha256`.      |
+| Gerber and manufacturing ZIP           | `403`, manufacturing export requires explicit approval. The browser saves no file.           |
+| Cost report                            | `422 cost_report_unresolved`. The browser saves no file.                                     |
+| Second tab                             | Identical SHA-256.                                                                          |
+| Reload during a download               | The next download is complete, with the same size.                                           |
+| Saved link after sign-out              | `401`, also for the old session cookie replayed in a new context.                            |
+
+![A board after import](/screenshots/enterprise/artifacts/01-board-ready.png)
+
+![A saved link after sign-out returns 401](/screenshots/enterprise/artifacts/03-link-after-logout.png)
+
+![Gerber export refused without approval](/screenshots/enterprise/artifacts/04-gerbers-refused.png)
+
+![Cost report refused while unresolved](/screenshots/enterprise/artifacts/05-cost-report-refused.png)
+
+## Fixed during qualification
+
+- **Retention** no longer deletes artifacts that a release manifest references.
+- **ZIP exports** are now revision-bound and return the same `409` as the PCB route for an unbound job.
+- **Provenance headers** are present on every download route, not only on ZIPs.
+- **Concurrent pruning** is retry-safe. A pruner that loses the race removes nothing instead of crashing.
+- **Notification payloads** no longer carry free-text review content, and removed members are not sent pending notifications.
+- **Object-store keys** are scoped by tenant, so a key cannot be guessed from content alone.
+
+## Known gaps
+
+Blocking for production:
+
+1. **Removal made directly in Atom.** A member removed outside Synth's own controllers can still download artifacts and receive notifications. This needs an Atom event or a membership check at download and dispatch time.
+2. **Object-store outage.** An artifact read during an outage returns `200` with empty content instead of failing.
+3. **Quota and error mapping.** Some failures return an inspected internal term instead of a stable error.
+
+Not blocking, but open:
+
+- The object store is reachable on host port `8888` with an empty default token in `docker-compose.yml`. Access relies on network isolation.
+- There is no export generation lock or idempotency key.
+- There is no streaming, `Range` support or size cap. A 5 MB package is served whole.
+- Filesystem and inline database artifact reads do not verify the stored hash.
+- Notifications have no read state, no correlation ID and no email path.
+
+## Not verified
+
+- A real browser download of a ZIP package. The browser run could only reach the refusals.
+- Cancellation at the socket level.
+- Reservation double-debit with reservations enabled.
+- A live object-store round trip. Those tests use a stub.
+- Real `kicad-cli` output. Tests use attested fixtures.
+- Removal made directly in Atom, end to end.
