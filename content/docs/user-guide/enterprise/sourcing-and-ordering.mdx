@@ -1,0 +1,147 @@
+---
+title: Sourcing and Ordering
+description: "Take a board from its parts list to a JLCPCB order: find and confirm parts, freeze procurement, build the cost report, clear release blockers, and what happens when something goes wrong."
+---
+
+# Sourcing and Ordering
+
+Follow this guide to:
+
+- Give every part on your board a confirmed LCSC supplier part.
+- Freeze procurement so the parts list is bound to one revision.
+- Build a cost report you can trust.
+- Clear the release blockers and order from JLCPCB, or hand off the package yourself.
+
+Each step says what Synth does when something is missing, stale, or unavailable.
+
+<Callout type="info" title="Nothing is ordered without you">
+
+Synth never places an order on its own, and never shows an order as placed until JLCPCB confirms it. Payment, cancellation and any change at JLCPCB stay in your JLCPCB account.
+
+</Callout>
+
+## Find and Confirm Parts
+
+Open **Procurement** in the **Deliver** view. The parts list has one row for every placed reference (`C1`, `R1`, `U1`, and so on). A new board starts with no confirmed supplier parts.
+
+1. Select a reference.
+2. Use **Find LCSC part** to search the catalog, or enter an LCSC number directly.
+3. Compare the candidates. Each one shows its LCSC number, MPN, package, stock and price tiers.
+4. Assign the part, then confirm it in **LCSC identity review**.
+
+A part is assigned to one reference, not to every copy of it. `C1` and `C2` can use different capacitors.
+
+<Callout type="warn" title="The package must match the footprint">
+
+If the candidate's package does not match the reference's footprint (for example, an 0603 part on an 0805 footprint), Synth refuses it with **Review the catalog package against the footprint before confirming this identity.** The reference stays unconfirmed. Pick a candidate in the right package.
+
+</Callout>
+
+Other cases you may see:
+
+| What you did                            | What happens                                                              |
+| :-------------------------------------- | :------------------------------------------------------------------------ |
+| Searched with an empty query            | No candidates. Synth does not call the catalog.                           |
+| Entered an LCSC number that is malformed | Refused. Nothing is saved.                                               |
+| Entered an LCSC number that does not exist | Refused. Nothing is saved.                                             |
+| Picked a part with no stock or price data | The part is shown with its stock and price as unknown. Synth does not invent values. |
+
+### Assembly Disposition
+
+Each reference has a **Disposition**: supplier assembly, hand assembly, do not populate, or mechanical. It decides whether the part is in the JLCPCB assembly order.
+
+A hand-assembled or mechanical part still needs a confirmed LCSC part before procurement can be frozen.
+
+## When the Parts Catalog Has Problems
+
+The catalog is an outside service. When it misbehaves, your saved work is not affected.
+
+| What the catalog does                     | What you see                                                       |
+| :---------------------------------------- | :----------------------------------------------------------------- |
+| Does not answer, or answers with an error | **The part catalog is not answering. Try again shortly.** The parts list still loads. |
+| Takes too long                            | The same message after about 10 seconds.                           |
+| Sends a reply Synth cannot read           | No candidates. Synth retries once before giving up.                |
+| Has no matching part                      | An empty list, not an error.                                       |
+
+Search again once the catalog recovers. Candidates come back on the next search.
+
+## Freeze Procurement
+
+When every reference has a confirmed part, select **Freeze procurement** in the **Cost report** panel. Freezing records exactly which supplier part each reference uses, bound to the current revision.
+
+- If any part is still unconfirmed, the freeze is refused and the message names the part, for example `J1: registry part is not reviewed`.
+- Freezing again without changes returns the same frozen record. Several people freezing at the same time also get one record.
+- After the freeze, live price refreshes are labelled as live, so you can tell them apart from the frozen record.
+
+<Callout type="warn" title="Some changes undo the freeze">
+
+Changing a part's disposition, or saving a new revision of the design, invalidates the frozen procurement and the cost report. The panel says **The recorded lock belongs to an earlier revision. Freeze again to bind procurement to this one.** Select **Re-freeze procurement**, then rebuild the cost report.
+
+</Callout>
+
+## Build the Cost Report
+
+Choose a **Build scenario** (how many boards are fabricated and assembled), then select **Calculate build cost**.
+
+The report shows a **Complete total** only when every manufacturing and delivery cost is known. Otherwise it shows a **Known subtotal** and marks the report **Incomplete**, so a missing price never looks like a zero.
+
+Some board profiles need a supplier quote. Enter the **Supplier quote ID**, amount, **Quote date** and **Quote valid until**.
+
+| Situation                                  | What happens                                                       |
+| :----------------------------------------- | :----------------------------------------------------------------- |
+| The amount is zero or negative             | Refused: the quote needs a positive amount, a quote date and a validity date. |
+| A date cannot be read                      | Refused for the same reason.                                       |
+| The quote has expired                      | Kept on the report, but the report is not complete. You see **Some supplier offers expired**. |
+| You set a **Target budget**                | The report says **Within budget**, **Over budget**, or **Budget indeterminate** when the total is not complete. |
+
+## Clear the Release Blockers
+
+**Release readiness** in the **Deliver** view lists everything that stops a release. Each blocker says what to do:
+
+| Blocker                                        | What to do                                              |
+| :--------------------------------------------- | :------------------------------------------------------ |
+| Freeze reviewed supplier assignments           | Confirm every part, then freeze procurement.            |
+| Complete the revision-bound cost report        | Fill the missing costs and recalculate.                 |
+| Refresh the cost report for this revision      | Recalculate after the latest change.                    |
+| Resolve DRC findings / Resolve ERC findings    | Fix the board and rebuild.                              |
+| Attest the DRC rule set                        | Build the board so the physical checks run against its declared rules. |
+| Generate attested KiCad manufacturing artifacts | Build the board to produce the manufacturing files.    |
+| Complete the required fabrication files        | Rebuild so every fabrication file is present.           |
+| Complete the manufacturing package             | Clear the other blockers; the package follows.          |
+
+A release cannot be approved while any blocker is listed.
+
+![The Deliver view with the handoff blocked](/screenshots/enterprise/procurement/deliver-blocked.png)
+
+## Order from JLCPCB
+
+Ordering through Synth needs:
+
+- JLCPCB Open Platform keys, added in **Settings** by a workspace admin or owner. Viewers and editors cannot add them.
+- A deployment whose outgoing address is on your JLCPCB account's whitelist.
+- A release with no blockers.
+
+Without keys, the panel says **This workspace has no JLCPCB credentials**. You can still download the manufacturing package and upload it to JLCPCB yourself.
+
+1. Select **Request quote**. Synth sends JLCPCB the frozen procurement, the build scenario quantity and the board profile.
+2. Check the **JLCPCB quote** against your cost report.
+3. Select **Place order**. Synth sends one order for the quote you confirmed.
+
+What Synth guarantees:
+
+- **No duplicate orders.** Retrying or double-clicking sends one quote request and one order.
+- **No order without a quote.** An expired quote says **This quote has expired. Request a new quote to order.**
+- **Only confirmed orders count.** If JLCPCB declines, the order shows **Rejected by JLCPCB**. If JLCPCB's reply cannot be matched to the quote, the order shows **Needs checking** and nothing more is ordered for that quote until someone checks it in the JLCPCB console.
+
+<Callout type="warn" title="An order with no recorded outcome">
+
+If Synth sent an order but never recorded JLCPCB's answer, the order shows **This order was sent to JLCPCB but its result was never recorded.** Synth will not send it again. Check your JLCPCB account, then an owner or editor uses **Record outcome** to note what happened.
+
+</Callout>
+
+Synth has no cancel button. Cancel an order in your JLCPCB account, then record the outcome in Synth.
+
+## What to Read Next
+
+- [Qualification and Evidence](/user-guide/enterprise/qualification) — the release record behind a manufacturing package.
+- [Admin and Billing](/user-guide/enterprise/admin-and-billing) — quotas that can refuse an export.
