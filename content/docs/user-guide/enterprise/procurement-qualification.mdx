@@ -132,5 +132,4 @@ Each has a test that fails without the fix.
 ## Known gaps
 
 - A hand-assembled or mechanical part cannot pass the freeze unless it has an exact LCSC identity: the `synth procurement-lock` command takes no disposition (absmach/synth#459).
-- The local stack cannot produce a trusted routed board (the renderer and router are not in the SaaS image), so its release packages are blocked on physical evidence; the complete package comes from the test fixture.
 - A real quote or order needs JLCPCB credentials and a whitelisted address. The signed request, the retry and duplicate rules and the reconciliation are covered by the tests in the scenario table; the provider's own responses are not exercised.
