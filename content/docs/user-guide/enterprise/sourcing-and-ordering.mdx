@@ -22,7 +22,7 @@ Synth never places an order on its own, and never shows an order as placed until
 
 ## Find and Confirm Parts
 
-Open **Procurement** in the **Deliver** view. The parts list has one row for every placed reference (`C1`, `R1`, `U1`, and so on). A new board starts with no confirmed supplier parts.
+Open **Sourcing** from the tool rail (or **Open Sourcing & procurement** in the command palette). The parts list has one row for every placed reference (`C1`, `R1`, `U1`, and so on). A new board starts with no confirmed supplier parts.
 
 1. Select a reference.
 2. Use **Find LCSC part** to search the catalog, or enter an LCSC number directly.
@@ -33,7 +33,7 @@ A part is assigned to one reference, not to every copy of it. `C1` and `C2` can 
 
 <Callout type="warn" title="The package must match the footprint">
 
-If the candidate's package does not match the reference's footprint (for example, an 0603 part on an 0805 footprint), Synth refuses it with **Review the catalog package against the footprint before confirming this identity.** The reference stays unconfirmed. Pick a candidate in the right package.
+If the candidate's package does not match the reference's footprint (for example, an 0603 part on an 0805 footprint), Synth refuses it and the reference stays unconfirmed. The Sourcing panel does not show a message for the refusal yet, so if a part will not stay confirmed, check its package and pick a candidate that matches the footprint.
 
 </Callout>
 
@@ -42,8 +42,8 @@ Other cases you may see:
 | What you did                            | What happens                                                              |
 | :-------------------------------------- | :------------------------------------------------------------------------ |
 | Searched with an empty query            | No candidates. Synth does not call the catalog.                           |
-| Entered an LCSC number that is malformed | Refused. Nothing is saved.                                               |
-| Entered an LCSC number that does not exist | Refused. Nothing is saved.                                             |
+| Entered an LCSC number that is malformed | Refused. Nothing is saved and the reference stays unconfirmed.            |
+| Entered an LCSC number that does not exist | Refused. Nothing is saved and the reference stays unconfirmed.          |
 | Picked a part with no stock or price data | The part is shown with its stock and price as unknown. Synth does not invent values. |
 
 ### Assembly Disposition
@@ -54,22 +54,22 @@ A hand-assembled or mechanical part still needs a confirmed LCSC part before pro
 
 ## When the Parts Catalog Has Problems
 
-The catalog is an outside service. When it misbehaves, your saved work is not affected.
+The catalog is an outside service. When it misbehaves, your saved work is not affected: the parts list still loads and confirmed parts keep their identity.
 
-| What the catalog does                     | What you see                                                       |
+| What the catalog does                     | What you see in Sourcing                                           |
 | :---------------------------------------- | :----------------------------------------------------------------- |
-| Does not answer, or answers with an error | **The part catalog is not answering. Try again shortly.** The parts list still loads. |
-| Takes too long                            | The same message after about 10 seconds.                           |
+| Does not answer, or answers with an error | No candidates. The panel does not yet say the catalog is down.     |
+| Takes too long                            | No candidates, after about 10 seconds.                             |
 | Sends a reply Synth cannot read           | No candidates. Synth retries once before giving up.                |
-| Has no matching part                      | An empty list, not an error.                                       |
+| Has no matching part                      | No candidates.                                                     |
 
-Search again once the catalog recovers. Candidates come back on the next search.
+Because all four look the same today, an empty result for a part you know exists usually means the catalog is unavailable. Search again shortly; candidates come back on the next search once it recovers.
 
 ## Freeze Procurement
 
-When every reference has a confirmed part, select **Freeze procurement** in the **Cost report** panel. Freezing records exactly which supplier part each reference uses, bound to the current revision.
+When every reference has a confirmed part, open **Cost** from the tool rail and select **Freeze procurement**. Freezing records exactly which supplier part each reference uses, bound to the current revision.
 
-- If any part is still unconfirmed, the freeze is refused and the message names the part, for example `J1: registry part is not reviewed`.
+- If any part is still unconfirmed, the freeze is refused: a **Could not freeze procurement** message names the part that is not reviewed.
 - Freezing again without changes returns the same frozen record. Several people freezing at the same time also get one record.
 - After the freeze, live price refreshes are labelled as live, so you can tell them apart from the frozen record.
 
@@ -89,29 +89,30 @@ Some board profiles need a supplier quote. Enter the **Supplier quote ID**, amou
 
 | Situation                                  | What happens                                                       |
 | :----------------------------------------- | :----------------------------------------------------------------- |
-| The amount is zero or negative             | Refused: the quote needs a positive amount, a quote date and a validity date. |
-| A date cannot be read                      | Refused for the same reason.                                       |
+| The amount is zero or negative             | Refused with **Could not calculate the cost**: the quote needs a positive amount, a quote date and a validity date. |
+| A date cannot be read                      | Refused the same way.                                              |
 | The quote has expired                      | Kept on the report, but the report is not complete. You see **Some supplier offers expired**. |
 | You set a **Target budget**                | The report says **Within budget**, **Over budget**, or **Budget indeterminate** when the total is not complete. |
 
 ## Clear the Release Blockers
 
-**Release readiness** in the **Deliver** view lists everything that stops a release. Each blocker says what to do:
+Open **Delivery** from the tool rail. The **Delivery & manufacturing** view shows **Release readiness**: the ERC, DRC, manufacturing, procurement and cost state of this revision, and a **Blocking release** list.
 
-| Blocker                                        | What to do                                              |
-| :--------------------------------------------- | :------------------------------------------------------ |
-| Freeze reviewed supplier assignments           | Confirm every part, then freeze procurement.            |
-| Complete the revision-bound cost report        | Fill the missing costs and recalculate.                 |
-| Refresh the cost report for this revision      | Recalculate after the latest change.                    |
-| Resolve DRC findings / Resolve ERC findings    | Fix the board and rebuild.                              |
-| Attest the DRC rule set                        | Build the board so the physical checks run against its declared rules. |
-| Generate attested KiCad manufacturing artifacts | Build the board to produce the manufacturing files.    |
-| Complete the required fabrication files        | Rebuild so every fabrication file is present.           |
-| Complete the manufacturing package             | Clear the other blockers; the package follows.          |
+| Blocker                     | What to do                                                       |
+| :-------------------------- | :--------------------------------------------------------------- |
+| Procurement not frozen      | Confirm every part in **Sourcing**, then freeze procurement in **Cost**. |
+| Cost report incomplete      | Fill the missing costs in **Cost** and recalculate.              |
+| Cost report stale           | Recalculate the cost report after the latest change.             |
+| Erc not clean / Drc not clean | Fix the findings in **Checks** and rebuild.                    |
+| Drc rule not attested / Drc attestation error | Build the board so the physical checks run against its declared rules. |
+| Manufacturing not attested / Manufacturing files incomplete | Build the board to produce the full set of manufacturing files. |
+| Stale checks                | Rerun the checks for the current source.                         |
+| Revision not current        | Open the current revision; a release is bound to it.             |
+| Release not approved        | Request approval in **Release readiness**.                       |
 
-A release cannot be approved while any blocker is listed.
+A release cannot be approved while any blocker is listed. An unknown check counts as a blocker; it is never shown as a pass.
 
-![The Deliver view with the handoff blocked](/screenshots/enterprise/procurement/deliver-blocked.png)
+![The Delivery & manufacturing view of a blocked board](/screenshots/enterprise/procurement/delivery-blocked.png)
 
 ## Order from JLCPCB
 
