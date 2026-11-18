@@ -115,21 +115,3 @@ Test files are under `saas/test/synth_saas/` in synth-ee.
 | Never claimed | an order or a fabrication exists only when JLCPCB's response echoes the quote and revision and reports an accepted status. A rejection is stored as rejected; anything unrecognised stays unverified until a person reconciles it. |
 
 Example packages: [`examples/complete-package.json`](https://github.com/absmach/synth-ee/blob/fce6489/qualification/procurement/examples/complete-package.json) is the clean, attested, frozen and costed package the release tests use; [`examples/blocked-variants.json`](https://github.com/absmach/synth-ee/blob/fce6489/qualification/procurement/examples/blocked-variants.json) is the same package with one piece of evidence removed, and the blocker each removal produces. The blocked package from the live run is the `R1` row of the live run and `examples/blocked-live.json`.
-
-## Fixed during qualification
-
-| Defect | Effect | Fix |
-|:---|:---|:---|
-| The registry snapshot written for the compiler included the seeded `rp2350` and `stm32f103c8` rows with their schematic symbols; those rows store pin names only, so the compiler's strict load rejected the whole registry. | Every procurement freeze failed, whatever the board used. | The snapshot leaves out `kicad_symbol` (the lock needs the supplier identity, not the symbol). |
-| The sourcing table sends the reference with every assign and confirm, but the server stored the identity part-wide and then looked for it by reference. | Every assignment from the table answered `part_not_found`, after having written the identity. | The identity is stored and confirmed for the reference. |
-| The table's refresh sent no reference. | A reference-level identity could not be refreshed (`lcsc_part_number_required`). | The panel and the server pass the reference. |
-| A changed assembly disposition invalidated frozen evidence only on the old LiveView page; the web UI's release gate reads the job's own lock and cost report. | A release could pass on a lock and cost report that no longer matched the assembly. | The disposition endpoint invalidates the snapshots and clears the job's lock and cost report, so the gate asks for a new freeze and cost run. |
-| A refused freeze showed the compiler's stderr. | Dozens of "shadows a shipped part" warnings and temporary paths reached the page. | Only the reason the lock was refused is shown. |
-| A catalog 503 or timeout showed `lcsc_search_failed: %Req.TransportError{}` with a 422, and a late reply made the HTTP client raise a 500. | The provider's term reached the page, and a catalog outage looked like a server error. | Catalog calls rescue, and the page shows "The part catalog is not answering" with a 503 (absmach/synth-ee#292). |
-
-Each has a test that fails without the fix.
-
-## Known gaps
-
-- A hand-assembled or mechanical part cannot pass the freeze unless it has an exact LCSC identity: the `synth procurement-lock` command takes no disposition (absmach/synth#459).
-- A real quote or order needs JLCPCB credentials and a whitelisted address. The signed request, the retry and duplicate rules and the reconciliation are covered by the tests in the scenario table; the provider's own responses are not exercised.
